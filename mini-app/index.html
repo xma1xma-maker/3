@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق تيليجرام</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify_content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #fff);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>مرحباً بك في البوت! 👋</h1>
+    <p>هذه صفحة تجريبية تعمل داخل تيليجرام.</p>
+    <button onclick="Telegram.WebApp.close()">إغلاق النافذة</button>
+
+    <script>
+        // إخبار تيليجرام أن التطبيق جاهز للعرض
+        Telegram.WebApp.ready();
+        // توسيع النافذة لتأخذ كامل الارتفاع
+        Telegram.WebApp.expand();
+    </script>
+</body>
+</html>
