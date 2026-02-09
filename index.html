@@ -3,161 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FoxiGrow Ultimate - Mustafa Alaa</title>
+    <title>FoxiGrow V3 - Mustafa Alaa</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #050505;
-            --card: rgba(255, 255, 255, 0.05);
+            --bg: #080808;
+            --card: #121212;
             --primary: #ff9900;
             --secondary: #00ffcc;
-            --border: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-dim: #888;
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; margin: 0; padding: 0; }
-        body { font-family: 'Cairo', sans-serif; background: var(--bg); color: #fff; padding-bottom: 100px; overflow-x: hidden; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; margin: 0; padding: 0; }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); color: #fff; overflow: hidden; height: 100vh; }
         
-        /* Header */
-        .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border); }
-        .user-info { display: flex; align-items: center; gap: 12px; }
-        .avatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(45deg, var(--primary), #ff4d00); display: flex; align-items: center; justify-content: center; font-weight: 800; border: 2px solid var(--border); font-size: 1.2rem; }
-        .lvl-tag { background: rgba(255,153,0,0.1); border: 1px solid var(--primary); color: var(--primary); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; margin-top: 4px; display: inline-block; }
+        /* Loader */
+        #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        
+        /* Container & Pages */
+        #app-container { height: 100%; display: flex; flex-direction: column; }
+        .view { display: none; flex: 1; padding: 20px; overflow-y: auto; padding-bottom: 100px; }
+        .view.active { display: block; animation: fadeIn 0.3s ease; }
 
-        /* Stats Card */
-        .stats-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; }
-        .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 15px 5px; text-align: center; backdrop-filter: blur(10px); }
-        .stat-card.active { border-color: var(--primary); box-shadow: 0 0 15px rgba(255,153,0,0.1); }
-        .stat-card .val { font-size: 1.2rem; font-weight: 800; display: block; margin-bottom: 4px; }
-        .stat-card .label { font-size: 0.65rem; color: #888; }
+        /* UI Elements */
+        .card { background: var(--card); border-radius: 20px; padding: 15px; border: 1px solid var(--border); margin-bottom: 15px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .balance-hero { text-align: center; padding: 20px 0; }
+        .balance-hero h1 { font-size: 2.8rem; font-weight: 900; color: var(--primary); text-shadow: 0 0 20px rgba(255,153,0,0.2); }
+
+        /* Navigation Bar */
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15,15,15,0.95); display: flex; justify-content: space-around; padding: 15px 5px; border-top: 1px solid var(--border); backdrop-filter: blur(10px); }
+        .nav-item { flex: 1; text-align: center; color: #555; font-size: 0.75rem; cursor: pointer; transition: 0.2s; }
+        .nav-item.active { color: var(--primary); transform: translateY(-3px); }
+        .nav-item i { font-size: 1.5rem; display: block; margin-bottom: 4px; font-style: normal; }
+
+        /* Buttons */
+        .btn { background: var(--primary); color: #000; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; width: 100%; font-family: 'Cairo'; margin-top: 10px; }
+        .btn:disabled { background: #333; color: #666; }
 
         /* Clicker Area */
-        .clicker-section { display: flex; flex-direction: column; align-items: center; margin: 20px 0; }
-        .coin-wrapper { position: relative; width: 240px; height: 240px; }
-        .coin-btn { width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffd000, #ff9900); border: 10px solid rgba(255,255,255,0.05); cursor: pointer; transition: transform 0.05s ease-in-out; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 60px rgba(255,153,0,0.3); }
-        .coin-btn:active { transform: scale(0.95); }
-        .coin-btn img { width: 110px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.2)); }
+        .clicker-circle { width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #ffd000, #ff9900); margin: 30px auto; border: 8px solid rgba(255,255,255,0.05); cursor: pointer; transition: transform 0.05s; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 40px rgba(255,153,0,0.2); }
+        .clicker-circle:active { transform: scale(0.92); }
 
-        /* Energy Bar */
-        .energy-box { width: 80%; margin-top: 20px; text-align: center; }
-        .energy-bar { height: 12px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 8px; overflow: hidden; border: 1px solid var(--border); }
-        .energy-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff9900, #ffd000); transition: width 0.3s; }
+        /* List Items */
+        .list-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .list-row:last-child { border: none; }
 
-        /* Navigation */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,10,10,0.98); display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid var(--border); z-index: 1000; }
-        .nav-btn { color: #666; font-size: 0.75rem; text-align: center; flex: 1; cursor: pointer; transition: 0.3s; }
-        .nav-btn.active { color: var(--primary); transform: translateY(-3px); }
-        .nav-btn i { font-size: 1.6rem; display: block; margin-bottom: 5px; }
-
-        /* Modals (Full Screen) */
-        .modal { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: none; flex-direction: column; padding: 25px; overflow-y: auto; }
-        .modal.active { display: flex; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .btn-close { background: var(--card); border: 1px solid var(--border); color: #fff; padding: 8px 15px; border-radius: 10px; }
-
-        /* Elements */
-        .item-row { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .btn-buy { background: var(--primary); border: none; color: #fff; padding: 8px 15px; border-radius: 10px; font-weight: bold; }
-        .btn-buy.disabled { background: #333; color: #777; }
-
-        #loading-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .float-text { position: absolute; font-weight: 900; font-size: 1.8rem; pointer-events: none; animation: floatUp 0.8s ease-out forwards; }
-        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes floatNum { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-100px); } }
+        .floating-n { position: fixed; pointer-events: none; font-weight: 900; font-size: 1.5rem; animation: floatNum 0.7s forwards; z-index: 1000; }
     </style>
 </head>
 <body>
 
-    <div id="loading-screen">
-        <div style="width: 50px; height: 50px; border: 4px solid #222; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s infinite linear;"></div>
-        <p style="margin-top: 20px; font-weight: bold;">FoxiGrow Pro V.Final</p>
+    <div id="loader">
+        <div style="width: 40px; height: 40px; border: 4px solid #222; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s infinite linear;"></div>
+        <p style="margin-top:20px; color:var(--text-dim)">FoxiGrow Pro V3</p>
     </div>
 
-    <div id="home-view">
-        <div class="header">
-            <div class="user-info">
-                <div class="avatar" id="avatar">M</div>
-                <div>
-                    <h4 id="username">Mustafa Alaa</h4>
-                    <span class="lvl-tag" id="level-label">مبتدئ • Level 1</span>
+    <div id="app-container">
+        <div id="home" class="view active">
+            <div class="header">
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <div id="avatar" style="width:40px; height:40px; border-radius:50%; background:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:bold;">M</div>
+                    <span id="username" style="font-weight:bold;">Mustafa</span>
                 </div>
+                <div style="background:rgba(255,255,255,0.05); padding:5px 12px; border-radius:10px; font-size:0.8rem;">Lv. <span id="user-level">1</span></div>
             </div>
-            <div onclick="openModal('shop-modal')" style="font-size: 1.5rem; cursor: pointer;">🛒</div>
-        </div>
 
-        <div class="stats-box">
-            <div class="stat-card">
-                <span class="val" id="ref-count">0</span>
-                <span class="label">الأصدقاء</span>
+            <div class="balance-hero">
+                <p style="font-size:0.8rem; color:var(--text-dim)">رصيدك الحالي</p>
+                <h1 id="fg-balance">0.00</h1>
+                <p style="color:var(--secondary); font-size:0.9rem;">+ <span id="usdt-balance">0.00</span> USDT</p>
             </div>
-            <div class="stat-card active">
-                <span class="val" id="fg-balance" style="color: var(--primary);">0.00</span>
-                <span class="label">FG Coin</span>
-            </div>
-            <div class="stat-card">
-                <span class="val" id="usdt-balance" style="color: var(--secondary);">0.00</span>
-                <span class="label">USDT</span>
-            </div>
-        </div>
 
-        <div class="clicker-section">
-            <div class="coin-wrapper">
-                <div class="coin-btn" onpointerdown="doTap(event)">
-                    <img src="https://cdn-icons-png.flaticon.com/512/217/217853.png" alt="Coin">
-                </div>
+            <div class="clicker-circle" onpointerdown="handleTap(event)">
+                <img src="https://cdn-icons-png.flaticon.com/512/217/217853.png" width="100">
             </div>
-            <div class="energy-box">
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #888;">
+
+            <div class="card" style="margin-top:20px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-bottom:8px;">
                     <span>⚡ الطاقة</span>
-                    <span id="energy-text">1000 / 1000</span>
+                    <span><span id="energy-val">1000</span>/1000</span>
                 </div>
-                <div class="energy-bar">
-                    <div class="energy-fill" id="energy-fill"></div>
+                <div style="height:8px; background:#222; border-radius:10px; overflow:hidden;">
+                    <div id="energy-bar" style="height:100%; width:100%; background:var(--primary); transition:0.3s;"></div>
                 </div>
             </div>
+        </div>
+
+        <div id="tasks" class="view">
+            <h2>المهام اليومية 🎯</h2>
+            <p style="color:var(--text-dim); margin-bottom:20px;">أكمل المهام لزيادة رصيدك فوراً</p>
+            
+            <div class="card">
+                <div class="list-row">
+                    <div>
+                        <h4>قناة البوت الرسمية</h4>
+                        <p style="font-size:0.75rem; color:var(--text-dim)">+10,000 FG</p>
+                    </div>
+                    <button class="btn" style="width:auto;" onclick="doTask('https://t.me/tofe109tofebot', 10000)">Go</button>
+                </div>
+                <div class="list-row">
+                    <div>
+                        <h4>دعوة 3 أصدقاء</h4>
+                        <p style="font-size:0.75rem; color:var(--text-dim)">+50,000 FG</p>
+                    </div>
+                    <button class="btn" style="width:auto;" onclick="switchView('referral')">أرسل</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="shop" class="view">
+            <h2>المتجر 🛒</h2>
+            <p style="color:var(--text-dim); margin-bottom:20px;">استثمر نقاطك لزيادة سرعة الربح</p>
+            
+            <div class="card">
+                <div class="list-row">
+                    <div>
+                        <h4>نقرة المطور (Multi-Tap)</h4>
+                        <p style="font-size:0.75rem; color:var(--text-dim)">اربح +2 لكل نقرة</p>
+                    </div>
+                    <button class="btn" style="width:auto;" onclick="buyUpgrade('tap', 5000)">5K FG</button>
+                </div>
+                <div class="list-row">
+                    <div>
+                        <h4>مخزن الطاقة (Energy Cap)</h4>
+                        <p style="font-size:0.75rem; color:var(--text-dim)">+1000 طاقة قصوى</p>
+                    </div>
+                    <button class="btn" style="width:auto;" onclick="buyUpgrade('energy', 10000)">10K FG</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="profile" class="view">
+            <div style="text-align:center; padding:30px 0;">
+                <div style="width:80px; height:80px; border-radius:50%; background:linear-gradient(45deg, var(--primary), #ff4d00); margin:0 auto 15px; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:900;">M</div>
+                <h2 id="prof-name">Mustafa Alaa</h2>
+                <p id="prof-id" style="color:var(--text-dim); font-size:0.8rem;">ID: 00000000</p>
+            </div>
+            
+            <div class="card">
+                <div class="list-row"><span>إجمالي النقرات</span><b id="total-taps">0</b></div>
+                <div class="list-row"><span>الأصدقاء المدعوون</span><b id="total-refs">0</b></div>
+                <div class="list-row"><span>المستوى الحالي</span><b id="prof-lv">برونزي</b></div>
+            </div>
+            <button class="btn" style="background:#222; color:#fff;" onclick="tg.close()">خروج من البوت</button>
         </div>
     </div>
 
-    <div id="shop-modal" class="modal">
-        <div class="modal-header">
-            <h3>المتجر 🛒</h3>
-            <button class="btn-close" onclick="closeModal('shop-modal')">إغلاق</button>
-        </div>
-        <div class="item-row">
-            <div>
-                <h4>زيادة الطاقة القصوى</h4>
-                <p style="font-size: 0.7rem; color: #888;">+500 طاقة إضافية</p>
-            </div>
-            <button class="btn-buy" onclick="buyItem('energy', 5000)">5000 FG</button>
-        </div>
-        <div class="item-row">
-            <div>
-                <h4>رصيد 1.00 USDT</h4>
-                <p style="font-size: 0.7rem; color: #888;">تحويل النقاط لعملة حقيقية</p>
-            </div>
-            <button class="btn-buy" onclick="buyItem('usdt', 50000)">50,000 FG</button>
-        </div>
-    </div>
-
-    <div id="tasks-modal" class="modal">
-        <div class="modal-header">
-            <h3>المهام اليومية 🎯</h3>
-            <button class="btn-close" onclick="closeModal('tasks-modal')">إغلاق</button>
-        </div>
-        <div id="tasks-list">
-            <div class="item-row">
-                <div>
-                    <h4>الاشتراك بقناتنا</h4>
-                    <p style="font-size: 0.7rem; color: #888;">اربح +1000 FG</p>
-                </div>
-                <button class="btn-buy" onclick="completeTask(1000, 'https://t.me/tofe109tofebot')">GO</button>
-            </div>
-        </div>
-    </div>
-
-    <nav class="bottom-nav">
-        <div class="nav-btn active" onclick="closeAll()"><i>🏠</i>الرئيسية</div>
-        <div class="nav-btn" onclick="openModal('tasks-modal')"><i>🎯</i>المهام</div>
-        <div class="nav-btn" onclick="openModal('shop-modal')"><i>🛒</i>المتجر</div>
-        <div class="nav-btn" onclick="shareRef()"><i>🎁</i>دعوة</div>
+    <nav class="nav-bar">
+        <div class="nav-item active" onclick="switchView('home')"><i>🏠</i>الرئيسية</div>
+        <div class="nav-item" onclick="switchView('tasks')"><i>🎯</i>المهام</div>
+        <div class="nav-item" onclick="switchView('shop')"><i>🛒</i>المتجر</div>
+        <div class="nav-item" onclick="switchView('profile')"><i>👤</i>الملف</div>
     </nav>
 
     <script type="module">
@@ -177,109 +177,93 @@
         const db = getFirestore(app);
         const tg = window.Telegram.WebApp;
 
-        let userId = tg.initDataUnsafe?.user?.id?.toString() || "dev_mustafa";
+        let userId = tg.initDataUnsafe?.user?.id?.toString() || "dev_user";
         const userRef = doc(db, "users", userId);
-        let userState = { energy: 1000, maxEnergy: 1000, balance: 0 };
+        let state = { balance: 0, energy: 1000, tapValue: 1 };
 
         async function init() {
             const snap = await getDoc(userRef);
             if (!snap.exists()) {
                 await setDoc(userRef, {
                     name: tg.initDataUnsafe?.user?.first_name || "Mustafa",
-                    balance_fg: 0,
-                    balance_usdt: 0,
-                    energy: 1000,
-                    max_energy: 1000,
-                    level: 1,
-                    friends: 0
+                    balance_fg: 0, balance_usdt: 0,
+                    energy: 1000, tap_val: 1, friends: 0, total_taps: 0
                 });
-                checkRef();
             }
 
             onSnapshot(userRef, (d) => {
                 const data = d.data();
-                userState.balance = data.balance_fg;
-                userState.maxEnergy = data.max_energy;
-                document.getElementById('fg-balance').innerText = data.balance_fg.toLocaleString();
+                state.balance = data.balance_fg;
+                state.tapValue = data.tap_val || 1;
+                document.getElementById('fg-balance').innerText = data.balance_fg.toLocaleString(undefined, {minimumFractionDigits: 2});
                 document.getElementById('usdt-balance').innerText = data.balance_usdt.toFixed(2);
                 document.getElementById('username').innerText = data.name;
-                document.getElementById('avatar').innerText = data.name.charAt(0);
-                document.getElementById('ref-count').innerText = data.friends || 0;
-                document.getElementById('level-label').innerText = `Level ${data.level} • ${data.level > 5 ? 'محترف' : 'مبتدئ'}`;
+                document.getElementById('prof-name').innerText = data.name;
+                document.getElementById('prof-id').innerText = "ID: " + userId;
+                document.getElementById('total-taps').innerText = data.total_taps || 0;
+                document.getElementById('total-refs').innerText = data.friends || 0;
             });
 
-            startEnergyRegen();
-            document.getElementById('loading-screen').style.display = 'none';
+            setInterval(() => {
+                if(state.energy < 1000) {
+                    state.energy += 2;
+                    updateEnergyUI();
+                }
+            }, 1500);
+
+            document.getElementById('loader').style.display = 'none';
         }
 
-        window.doTap = async (e) => {
-            if (userState.energy <= 0) return;
-            
-            userState.energy -= 1;
-            updateEnergyUI();
-            createFloat(e.clientX, e.clientY);
-            tg.HapticFeedback.impactOccurred('light');
+        window.switchView = (viewId) => {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach((btn, idx) => {
+                const views = ['home', 'tasks', 'shop', 'profile'];
+                btn.classList.toggle('active', views[idx] === viewId);
+            });
+            tg.HapticFeedback.selectionChanged();
+        };
 
-            await updateDoc(userRef, { balance_fg: increment(0.2) });
+        window.handleTap = (e) => {
+            if (state.energy <= 0) return;
+            state.energy -= 1;
+            updateEnergyUI();
+            createFloat(e.clientX, e.clientY, "+" + state.tapValue);
+            tg.HapticFeedback.impactOccurred('light');
+            updateDoc(userRef, { balance_fg: increment(state.tapValue), total_taps: increment(1) });
         };
 
         function updateEnergyUI() {
-            const pct = (userState.energy / userState.maxEnergy) * 100;
-            document.getElementById('energy-fill').style.width = pct + "%";
-            document.getElementById('energy-text').innerText = `${userState.energy} / ${userState.maxEnergy}`;
+            document.getElementById('energy-val').innerText = state.energy;
+            document.getElementById('energy-bar').style.width = (state.energy / 10) + "%";
         }
 
-        function startEnergyRegen() {
-            setInterval(() => {
-                if (userState.energy < userState.maxEnergy) {
-                    userState.energy += 1;
-                    updateEnergyUI();
-                }
-            }, 2000);
-        }
-
-        window.buyItem = async (type, price) => {
-            if (userState.balance < price) return tg.showAlert("رصيدك غير كافٍ!");
-            
-            if (type === 'energy') {
-                await updateDoc(userRef, { balance_fg: increment(-price), max_energy: increment(500) });
-            } else if (type === 'usdt') {
-                await updateDoc(userRef, { balance_fg: increment(-price), balance_usdt: increment(1.0) });
+        window.buyUpgrade = async (type, price) => {
+            if (state.balance < price) return tg.showAlert("رصيدك غير كافٍ!");
+            if (type === 'tap') {
+                await updateDoc(userRef, { balance_fg: increment(-price), tap_val: increment(1) });
             }
-            tg.showAlert("تمت عملية الشراء بنجاح!");
+            tg.showAlert("تمت الترقية بنجاح!");
         };
 
-        window.shareRef = () => {
-            const link = `https://t.me/tofe109tofebot?start=ref_${userId}`;
-            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("انضم إليّ في FoxiGrow وابدأ بجمع العملات!")}`);
+        window.doTask = async (url, reward) => {
+            window.open(url);
+            setTimeout(async () => {
+                await updateDoc(userRef, { balance_fg: increment(reward) });
+                tg.showAlert("مبروك! حصلت على المكافأة");
+            }, 5000);
         };
 
-        async function checkRef() {
-            const start = tg.initDataUnsafe?.start_param;
-            if (start?.startsWith('ref_')) {
-                const inviter = start.split('_')[1];
-                if (inviter !== userId) {
-                    await updateDoc(doc(db, "users", inviter), { balance_fg: increment(5000), friends: increment(1) });
-                    await updateDoc(userRef, { balance_fg: increment(2000) });
-                }
-            }
-        }
-
-        function createFloat(x, y) {
+        function createFloat(x, y, txt) {
             const el = document.createElement('div');
-            el.className = 'float-text';
+            el.className = 'floating-n';
             el.style.left = x + 'px'; el.style.top = y + 'px';
-            el.innerText = "+0.2";
+            el.innerText = txt;
             document.body.appendChild(el);
-            setTimeout(() => el.remove(), 800);
+            setTimeout(() => el.remove(), 700);
         }
-
-        window.openModal = (id) => document.getElementById(id).classList.add('active');
-        window.closeModal = (id) => document.getElementById(id).classList.remove('active');
-        window.closeAll = () => document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
 
         tg.ready(); tg.expand(); init();
     </script>
-    <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
 </body>
 </html>
