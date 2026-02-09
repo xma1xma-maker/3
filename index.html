@@ -3,112 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FoxiGrow Pro - Mustafa Alaa</title>
+    <title>FoxiGrow - Mustafa Alaa</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #0a0a0a;
+            --bg-dark: #050505;
             --card-bg: rgba(255, 255, 255, 0.05);
             --primary-glow: #ff9900;
             --secondary-glow: #00ffcc;
-            --text-main: #ffffff;
             --border: rgba(255, 255, 255, 0.1);
         }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
-        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
         body {
             font-family: 'Cairo', sans-serif;
             background-color: var(--bg-dark);
             background-image: radial-gradient(circle at 50% 10%, #1a1a1a, #000);
-            color: var(--text-main);
-            margin: 0; padding: 0;
-            min-height: 100vh;
-            display: flex; flex-direction: column;
-            padding-bottom: 80px;
+            color: #fff; margin: 0; padding-bottom: 80px;
         }
-
-        /* --- التحميل --- */
-        #loader {
-            position: fixed; inset: 0; background: #000; z-index: 9999;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-        }
-
-        /* --- واجهة المستخدم --- */
         .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .user-box { display: flex; align-items: center; gap: 10px; }
-        .avatar { 
-            width: 45px; height: 45px; border-radius: 50%; 
-            background: linear-gradient(45deg, var(--primary-glow), #f39c12);
-            display: flex; align-items: center; justify-content: center; font-weight: 800;
-            border: 2px solid var(--border);
-        }
-
-        .stats-container {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 12px; padding: 15px;
-        }
-
-        .stat-card {
-            background: var(--card-bg); border: 1px solid var(--border);
-            border-radius: 15px; padding: 15px 5px; text-align: center;
-            backdrop-filter: blur(10px); transition: 0.3s;
-        }
-        .stat-card.main { border-color: var(--primary-glow); box-shadow: 0 0 15px rgba(255,153,0,0.1); }
-        .stat-card .val { font-size: 1.3rem; font-weight: 800; display: block; margin-bottom: 4px; }
-        .stat-card .label { font-size: 0.7rem; color: #888; }
-
-        .big-action-card {
-            background: var(--card-bg); margin: 10px 15px;
-            padding: 20px; border-radius: 20px; border: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        .btn-checkin {
-            background: var(--primary-glow); border: none; color: #fff;
-            padding: 10px 20px; border-radius: 12px; font-weight: bold; cursor: pointer;
-        }
-
-        /* --- القائمة السفلية --- */
-        .nav-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: rgba(15, 15, 15, 0.95);
-            display: flex; justify-content: space-around;
-            padding: 15px; border-top: 1px solid var(--border);
-        }
-        .nav-item { color: #666; text-decoration: none; font-size: 0.7rem; text-align: center; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(45deg, #ff9900, #ff4d00); display: flex; align-items: center; justify-content: center; font-weight: 800; border: 2px solid var(--border); }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 15px 5px; text-align: center; backdrop-filter: blur(10px); }
+        .stat-card.active { border-color: var(--primary-glow); box-shadow: 0 0 15px rgba(255,153,0,0.15); }
+        .stat-card .val { font-size: 1.2rem; font-weight: 800; display: block; }
+        .stat-card .label { font-size: 0.65rem; color: #888; }
+        .action-card { background: var(--card-bg); margin: 10px 15px; padding: 20px; border-radius: 20px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .btn-claim { background: var(--primary-glow); border: none; color: #fff; padding: 10px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10, 10, 10, 0.95); display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid var(--border); }
+        .nav-item { color: #555; font-size: 0.7rem; text-align: center; text-decoration: none; }
         .nav-item.active { color: var(--primary-glow); }
-        .nav-item i { font-size: 1.5rem; display: block; margin-bottom: 4px; }
-
-        .glow-orange { color: var(--primary-glow); text-shadow: 0 0 10px rgba(255,153,0,0.4); }
-        .glow-green { color: var(--secondary-glow); text-shadow: 0 0 10px rgba(0,255,204,0.4); }
+        #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .glow-orange { color: #ff9900; text-shadow: 0 0 10px rgba(255,153,0,0.5); }
+        .glow-green { color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.5); }
     </style>
 </head>
 <body>
 
     <div id="loader">
         <div style="width: 40px; height: 40px; border: 4px solid #222; border-top-color: var(--primary-glow); border-radius: 50%; animation: spin 1s infinite linear;"></div>
-        <p style="color: #555; margin-top: 15px;">جاري الاتصال بالقاعدة...</p>
+        <p style="color: #666; margin-top: 15px;">يتم التحديث من المشروع الجديد...</p>
     </div>
 
     <header class="header">
-        <div class="user-box">
+        <div style="display: flex; align-items: center; gap: 10px;">
             <div class="avatar" id="avatar">M</div>
             <div>
-                <div style="font-weight: 800; font-size: 1rem;" id="username">Mustafa Alaa</div>
+                <div style="font-weight: 800;" id="username">Mustafa Alaa</div>
                 <div style="font-size: 0.7rem; color: var(--primary-glow);">LV.2 مبتدئ 🔥</div>
             </div>
         </div>
         <div style="font-size: 1.5rem;">⚙️</div>
     </header>
 
-    <div class="stats-container">
+    <div class="stats-grid">
         <div class="stat-card">
             <span class="val" style="color: #ff4d00;">6</span>
             <span class="label">مكتمل</span>
         </div>
-        <div class="stat-card main">
+        <div class="stat-card active">
             <span class="val glow-orange" id="fg-balance">0.00</span>
             <span class="label">FG Coin</span>
         </div>
@@ -118,20 +71,12 @@
         </div>
     </div>
 
-    <div class="big-action-card">
+    <div class="action-card">
         <div>
             <h4 style="margin:0">تسجيل الحضور اليومي</h4>
-            <p style="margin:5px 0 0; font-size:0.75rem; color:#666;">سجل دخولك يومياً لربح FG</p>
+            <p style="margin:5px 0 0; font-size:0.75rem; color:#666;">اضغط لجمع النقاط اليومية</p>
         </div>
-        <button class="btn-checkin" onclick="dailyCheckin()">استلام</button>
-    </div>
-
-    <div class="big-action-card" style="border-style: dashed; opacity: 0.8;">
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <span style="font-size: 1.5rem;">📘</span>
-            <h4 style="margin:0">شرح كيفية الربح</h4>
-        </div>
-        <span> > </span>
+        <button class="btn-claim" onclick="addPoints()">استلام</button>
     </div>
 
     <nav class="nav-bar">
@@ -142,49 +87,39 @@
     </nav>
 
     <script type="module">
-        // استدعاء مكتبات Firebase من الروابط الرسمية
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, increment, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // إعدادات Firebase الخاصة بك
+        // إعدادات مشروعك الجديد (tele-follow)
         const firebaseConfig = {
-            apiKey: "AIzaSyACixZDVCNww716fRN_29xm2kCnFadkL64",
-            authDomain: "tele-ea6e7.firebaseapp.com",
-            projectId: "tele-ea6e7",
-            storageBucket: "tele-ea6e7.firebasestorage.app",
-            messagingSenderId: "693110799024",
-            appId: "1:693110799024:web:4dd4057eef17b9ed3e1975"
+            apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ",
+            authDomain: "tele-follow.firebaseapp.com",
+            projectId: "tele-follow",
+            storageBucket: "tele-follow.firebasestorage.app",
+            messagingSenderId: "311701431089",
+            appId: "1:311701431089:web:fcba431dcae893a87cc610",
+            measurementId: "G-N38SCYC5WV"
         };
 
-        // تشغيل Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const tg = window.Telegram.WebApp;
 
-        // الحصول على معرف المستخدم من تيليجرام
-        let userId = "test_user_123"; // افتراضي للتجربة خارج تيليجرام
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            userId = tg.initDataUnsafe.user.id.toString();
-        }
-
+        let userId = tg.initDataUnsafe?.user?.id?.toString() || "dev_user";
         const userRef = doc(db, "users", userId);
 
-        async function startApp() {
+        async function init() {
             try {
                 const snap = await getDoc(userRef);
-                
-                // إذا كان المستخدم جديد، أنشئ له بيانات
                 if (!snap.exists()) {
                     await setDoc(userRef, {
                         name: tg.initDataUnsafe?.user?.first_name || "Mustafa",
-                        balance_fg: 0,
-                        balance_usdt: 0,
-                        level: 1,
-                        last_checkin: 0
+                        balance_fg: 8.1,
+                        balance_usdt: 0.23,
+                        level: 2
                     });
                 }
 
-                // تحديث الواجهة عند أي تغيير في قاعدة البيانات
                 onSnapshot(userRef, (doc) => {
                     if (doc.exists()) {
                         const data = doc.data();
@@ -195,36 +130,21 @@
                     }
                 });
 
-                // إخفاء شاشة التحميل
                 document.getElementById('loader').style.display = 'none';
-
-            } catch (error) {
-                console.error("Firebase Error:", error);
-                alert("مشكلة في الاتصال بقاعدة البيانات: " + error.message);
+            } catch (e) {
+                alert("خطأ: تأكد من تفعيل Firestore Rules إلى true");
             }
         }
 
-        // دالة تسجيل الحضور اليومي (مثال على تحديث البيانات)
-        window.dailyCheckin = async () => {
-            try {
-                await updateDoc(userRef, {
-                    balance_fg: increment(0.50)
-                });
-                tg.showAlert("تم تسجيل حضورك بنجاح! +0.50 FG");
-            } catch (e) {
-                alert("فشل التسجيل: " + e.message);
-            }
+        window.addPoints = async () => {
+            await updateDoc(userRef, { balance_fg: increment(1.0) });
+            tg.HapticFeedback.impactOccurred('medium');
         };
 
-        // تشغيل التطبيق
         tg.ready();
         tg.expand();
-        startApp();
-
+        init();
     </script>
-
-    <style>
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </style>
+    <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
 </body>
 </html>
