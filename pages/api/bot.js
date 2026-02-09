@@ -51,7 +51,7 @@ bot.onText(/\/start(.*)/, async (msg, match) => {
         [
           {
             text: "🚀 Open BTC WIN",
-            web_app: { url: "https://btc-win.vercel.app" },
+            web_app: { url: "https://3-chi-mocha.vercel.app" },
           },
         ],
       ],
