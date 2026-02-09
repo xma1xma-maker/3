@@ -3,148 +3,249 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FoxiGrow - Mustafa Alaa</title>
+    <title>FoxiGrow Full - Mustafa Alaa</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #050505;
+            --bg-dark: #070707;
             --card-bg: rgba(255, 255, 255, 0.05);
-            --primary-glow: #ff9900;
-            --secondary-glow: #00ffcc;
+            --primary: #ff9900;
+            --secondary: #00ffcc;
             --border: rgba(255, 255, 255, 0.1);
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
         body {
             font-family: 'Cairo', sans-serif;
             background-color: var(--bg-dark);
-            background-image: radial-gradient(circle at 50% 10%, #1a1a1a, #000);
-            color: #fff; margin: 0; padding-bottom: 80px;
+            background-image: radial-gradient(circle at 50% 0%, #1c1c1c, #000);
+            color: #fff; margin: 0; padding-bottom: 90px;
         }
-        .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(45deg, #ff9900, #ff4d00); display: flex; align-items: center; justify-content: center; font-weight: 800; border: 2px solid var(--border); }
+        /* Header */
+        .header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(45deg, var(--primary), #d35400); display: flex; align-items: center; justify-content: center; font-weight: 800; border: 2px solid var(--border); }
+        
+        /* Stats Area */
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; }
-        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 15px 5px; text-align: center; backdrop-filter: blur(10px); }
-        .stat-card.active { border-color: var(--primary-glow); box-shadow: 0 0 15px rgba(255,153,0,0.15); }
-        .stat-card .val { font-size: 1.2rem; font-weight: 800; display: block; }
-        .stat-card .label { font-size: 0.65rem; color: #888; }
-        .action-card { background: var(--card-bg); margin: 10px 15px; padding: 20px; border-radius: 20px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .btn-claim { background: var(--primary-glow); border: none; color: #fff; padding: 10px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10, 10, 10, 0.95); display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid var(--border); }
-        .nav-item { color: #555; font-size: 0.7rem; text-align: center; text-decoration: none; }
-        .nav-item.active { color: var(--primary-glow); }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 12px 5px; text-align: center; backdrop-filter: blur(10px); }
+        .stat-card.active { border-color: var(--primary); box-shadow: 0 0 15px rgba(255,153,0,0.1); }
+        .stat-card .val { font-size: 1.1rem; font-weight: 800; display: block; }
+        .stat-card .label { font-size: 0.6rem; color: #888; }
+
+        /* Main Coin Area */
+        .game-area { display: flex; flex-direction: column; align-items: center; margin-top: 10px; }
+        .coin { width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #ffd000, #ff9900); border: 10px solid rgba(255,255,255,0.05); cursor: pointer; transition: transform 0.1s; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 50px rgba(255,153,0,0.3); }
+        .coin:active { transform: scale(0.92); }
+        .coin-svg { width: 100px; fill: white; opacity: 0.9; }
+
+        /* Actions Section */
+        .section-title { padding: 10px 20px; font-size: 0.9rem; color: var(--primary); font-weight: bold; }
+        .action-card { background: var(--card-bg); margin: 5px 15px; padding: 15px; border-radius: 15px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .btn-action { background: var(--primary); border: none; color: #fff; padding: 8px 15px; border-radius: 10px; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
+
+        /* Navigation */
+        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,10,10,0.95); display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid var(--border); z-index: 100; }
+        .nav-item { color: #555; font-size: 0.75rem; text-align: center; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+
+        /* Modals */
+        .modal { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; flex-direction: column; padding: 20px; }
+        .modal.active { display: flex; }
+        .close-modal { align-self: flex-start; background: #222; padding: 10px; border-radius: 10px; margin-bottom: 20px; }
+
         #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .glow-orange { color: #ff9900; text-shadow: 0 0 10px rgba(255,153,0,0.5); }
-        .glow-green { color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.5); }
+        .float-val { position: fixed; font-weight: 800; font-size: 1.5rem; color: #fff; pointer-events: none; animation: upMove 0.8s forwards; z-index: 999; }
+        @keyframes upMove { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <div id="loader">
-        <div style="width: 40px; height: 40px; border: 4px solid #222; border-top-color: var(--primary-glow); border-radius: 50%; animation: spin 1s infinite linear;"></div>
-        <p style="color: #666; margin-top: 15px;">يتم التحديث من المشروع الجديد...</p>
+        <div style="width: 40px; height: 40px; border: 4px solid #222; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s infinite linear;"></div>
+        <p style="margin-top:15px; font-size:0.9rem; color:#888;">FoxiGrow Pro - Mustafa Alaa</p>
     </div>
 
-    <header class="header">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div class="avatar" id="avatar">M</div>
-            <div>
-                <div style="font-weight: 800;" id="username">Mustafa Alaa</div>
-                <div style="font-size: 0.7rem; color: var(--primary-glow);">LV.2 مبتدئ 🔥</div>
+    <div id="home-page">
+        <header class="header">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div class="avatar" id="avatar">M</div>
+                <div>
+                    <div id="username" style="font-weight: 800; font-size: 1rem;">Mustafa</div>
+                    <div style="font-size: 0.7rem; color: var(--primary);">المستوى: برونزي 🥉</div>
+                </div>
+            </div>
+            <div onclick="shareRef()" style="background: #222; padding: 5px 12px; border-radius: 10px; font-size: 0.8rem; border: 1px solid var(--primary); cursor: pointer;">Invite 🎁</div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card active">
+                <span class="val" id="fg-balance" style="color:var(--primary)">0.00</span>
+                <span class="label">FG Coin</span>
+            </div>
+            <div class="stat-card">
+                <span class="val" id="usdt-balance" style="color:var(--secondary)">0.00</span>
+                <span class="label">USDT</span>
+            </div>
+            <div class="stat-card">
+                <span class="val" id="ref-count">0</span>
+                <span class="label">أصدقاء</span>
             </div>
         </div>
-        <div style="font-size: 1.5rem;">⚙️</div>
-    </header>
 
-    <div class="stats-grid">
-        <div class="stat-card">
-            <span class="val" style="color: #ff4d00;">6</span>
-            <span class="label">مكتمل</span>
+        <div class="game-area">
+            <div class="coin" onpointerdown="tapCoin(event)">
+                <svg class="coin-svg" viewBox="0 0 24 24"><path d="M12 22L1.5 8 12 2l10.5 6L12 22zm0-2.5l8-10-8-5.5-8 5.5 8 10z"/></svg>
+            </div>
+            <div style="margin-top:15px; color:#666; font-size:0.8rem;">⚡ 1000 / 1000</div>
         </div>
-        <div class="stat-card active">
-            <span class="val glow-orange" id="fg-balance">0.00</span>
-            <span class="label">FG Coin</span>
-        </div>
-        <div class="stat-card">
-            <span class="val glow-green" id="usdt-balance">0.00</span>
-            <span class="label">USDT</span>
+
+        <div class="section-title">المهمات اليومية</div>
+        <div class="action-card">
+            <div>
+                <h4 style="margin:0">مهمة الانضمام</h4>
+                <p style="margin:5px 0 0; font-size:0.75rem; color:#666;">انضم لقناتنا واكسب +500 FG</p>
+            </div>
+            <button class="btn-action" onclick="window.open('https://t.me/tofe109tofebot')">Go</button>
         </div>
     </div>
 
-    <div class="action-card">
-        <div>
-            <h4 style="margin:0">تسجيل الحضور اليومي</h4>
-            <p style="margin:5px 0 0; font-size:0.75rem; color:#666;">اضغط لجمع النقاط اليومية</p>
-        </div>
-        <button class="btn-claim" onclick="addPoints()">استلام</button>
+    <div id="ref-modal" class="modal">
+        <div class="close-modal" onclick="closeModal('ref-modal')">X</div>
+        <h2>دعوة الأصدقاء</h2>
+        <p style="color:#888;">اربح 2,000 نقطة عن كل صديق يدخل من رابطك.</p>
+        <div id="ref-link" style="background:#1a1a1a; padding:15px; border-radius:10px; word-break:break-all; border: 1px dashed var(--primary);">جاري تحميل الرابط...</div>
+        <button class="btn-action" style="margin-top:20px; width:100%;" onclick="copyRef()">Copy Link</button>
+    </div>
+
+    <div id="rank-modal" class="modal">
+        <div class="close-modal" onclick="closeModal('rank-modal')">X</div>
+        <h2>قائمة المتصدرين</h2>
+        <div id="leaderboard-list">جاري تحميل الترتيب...</div>
     </div>
 
     <nav class="nav-bar">
-        <div class="nav-item active">🏠<br>الرئيسية</div>
-        <div class="nav-item">🎯<br>المهام</div>
-        <div class="nav-item">🏆<br>التصنيف</div>
+        <div class="nav-item active" onclick="closeAll()">🏠<br>الرئيسية</div>
+        <div class="nav-item" onclick="openModal('ref-modal')">🎁<br>الإحالة</div>
+        <div class="nav-item" onclick="openModal('rank-modal')">🏆<br>التصنيف</div>
         <div class="nav-item">👤<br>الملف</div>
     </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, increment, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, increment, updateDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // إعدادات مشروعك الجديد (tele-follow)
+        // إعدادات مشروعك الجديد
         const firebaseConfig = {
             apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ",
             authDomain: "tele-follow.firebaseapp.com",
             projectId: "tele-follow",
             storageBucket: "tele-follow.firebasestorage.app",
             messagingSenderId: "311701431089",
-            appId: "1:311701431089:web:fcba431dcae893a87cc610",
-            measurementId: "G-N38SCYC5WV"
+            appId: "1:311701431089:web:fcba431dcae893a87cc610"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const tg = window.Telegram.WebApp;
 
-        let userId = tg.initDataUnsafe?.user?.id?.toString() || "dev_user";
+        let userId = tg.initDataUnsafe?.user?.id?.toString() || "dev_mustafa";
         const userRef = doc(db, "users", userId);
 
-        async function init() {
+        async function initApp() {
             try {
                 const snap = await getDoc(userRef);
                 if (!snap.exists()) {
                     await setDoc(userRef, {
                         name: tg.initDataUnsafe?.user?.first_name || "Mustafa",
-                        balance_fg: 8.1,
-                        balance_usdt: 0.23,
-                        level: 2
+                        balance_fg: 0,
+                        balance_usdt: 0,
+                        friends: 0,
+                        last_sync: Date.now()
                     });
+                    checkReferral(); // فحص إذا دخل عبر رابط دعوة
                 }
 
-                onSnapshot(userRef, (doc) => {
-                    if (doc.exists()) {
-                        const data = doc.data();
-                        document.getElementById('fg-balance').innerText = data.balance_fg.toFixed(2);
-                        document.getElementById('usdt-balance').innerText = data.balance_usdt.toFixed(2);
-                        document.getElementById('username').innerText = data.name;
-                        document.getElementById('avatar').innerText = data.name.charAt(0);
-                    }
+                // رابط الدعوة
+                document.getElementById('ref-link').innerText = "https://t.me/tofe109tofebot?start=ref_" + userId;
+
+                // تحديث البيانات لحظياً
+                onSnapshot(userRef, (d) => {
+                    const data = d.data();
+                    document.getElementById('fg-balance').innerText = data.balance_fg.toFixed(2);
+                    document.getElementById('usdt-balance').innerText = data.balance_usdt.toFixed(2);
+                    document.getElementById('ref-count').innerText = data.friends || 0;
+                    document.getElementById('username').innerText = data.name;
+                    document.getElementById('avatar').innerText = data.name.charAt(0);
                 });
 
                 document.getElementById('loader').style.display = 'none';
             } catch (e) {
-                alert("خطأ: تأكد من تفعيل Firestore Rules إلى true");
+                alert("خطأ: تأكد من تفعيل Rules في فايربيس");
             }
         }
 
-        window.addPoints = async () => {
-            await updateDoc(userRef, { balance_fg: increment(1.0) });
-            tg.HapticFeedback.impactOccurred('medium');
+        // النقر على العملة
+        window.tapCoin = async (e) => {
+            let x = e.clientX, y = e.clientY;
+            createFloat(x, y);
+            tg.HapticFeedback.impactOccurred('light');
+            
+            // تحديث محلي سريع ثم مزامنة
+            await updateDoc(userRef, { balance_fg: increment(0.1) });
         };
 
-        tg.ready();
-        tg.expand();
-        init();
+        function createFloat(x, y) {
+            const div = document.createElement('div');
+            div.className = 'float-val';
+            div.style.left = x + 'px'; div.style.top = y + 'px';
+            div.innerText = "+0.1";
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 800);
+        }
+
+        // التعامل مع الإحالات
+        async function checkReferral() {
+            const startParam = tg.initDataUnsafe?.start_param;
+            if (startParam && startParam.startsWith('ref_')) {
+                const inviterId = startParam.split('_')[1];
+                if (inviterId !== userId) {
+                    const inviterRef = doc(db, "users", inviterId);
+                    await updateDoc(inviterRef, { 
+                        balance_fg: increment(2000), 
+                        friends: increment(1) 
+                    });
+                    await updateDoc(userRef, { balance_fg: increment(1000) });
+                    tg.showAlert("مبروك! ربحت 1000 نقطة من رابط الدعوة");
+                }
+            }
+        }
+
+        // المتصدرين
+        window.openModal = async (id) => {
+            document.getElementById(id).classList.add('active');
+            if (id === 'rank-modal') {
+                const q = query(collection(db, "users"), orderBy("balance_fg", "desc"), limit(10));
+                const snap = await getDocs(q);
+                let html = "";
+                let i = 1;
+                snap.forEach(d => {
+                    html += `<div class="action-card"><span>#${i} ${d.data().name}</span><b>${d.data().balance_fg.toFixed(0)} FG</b></div>`;
+                    i++;
+                });
+                document.getElementById('leaderboard-list').innerHTML = html;
+            }
+        };
+
+        window.closeModal = (id) => document.getElementById(id).classList.remove('active');
+        window.closeAll = () => document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+        window.copyRef = () => {
+            const link = document.getElementById('ref-link').innerText;
+            navigator.clipboard.writeText(link);
+            tg.showAlert("تم نسخ رابط الدعوة!");
+        };
+
+        tg.ready(); tg.expand(); initApp();
     </script>
-    <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
 </body>
 </html>
