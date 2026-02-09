@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FoxiGrow Pro - Mustafa Alaa</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --primary-glow: #ff9900;
+            --secondary-glow: #00ffcc;
+            --text-main: #ffffff;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% 10%, #1a1a1a, #000);
+            color: var(--text-main);
+            margin: 0; padding: 0;
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            padding-bottom: 80px;
+        }
+
+        /* --- التحميل --- */
+        #loader {
+            position: fixed; inset: 0; background: #000; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+
+        /* --- واجهة المستخدم --- */
+        .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .user-box { display: flex; align-items: center; gap: 10px; }
+        .avatar { 
+            width: 45px; height: 45px; border-radius: 50%; 
+            background: linear-gradient(45deg, var(--primary-glow), #f39c12);
+            display: flex; align-items: center; justify-content: center; font-weight: 800;
+            border: 2px solid var(--border);
+        }
+
+        .stats-container {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 12px; padding: 15px;
+        }
+
+        .stat-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 15px; padding: 15px 5px; text-align: center;
+            backdrop-filter: blur(10px); transition: 0.3s;
+        }
+        .stat-card.main { border-color: var(--primary-glow); box-shadow: 0 0 15px rgba(255,153,0,0.1); }
+        .stat-card .val { font-size: 1.3rem; font-weight: 800; display: block; margin-bottom: 4px; }
+        .stat-card .label { font-size: 0.7rem; color: #888; }
+
+        .big-action-card {
+            background: var(--card-bg); margin: 10px 15px;
+            padding: 20px; border-radius: 20px; border: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .btn-checkin {
+            background: var(--primary-glow); border: none; color: #fff;
+            padding: 10px 20px; border-radius: 12px; font-weight: bold; cursor: pointer;
+        }
+
+        /* --- القائمة السفلية --- */
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(15, 15, 15, 0.95);
+            display: flex; justify-content: space-around;
+            padding: 15px; border-top: 1px solid var(--border);
+        }
+        .nav-item { color: #666; text-decoration: none; font-size: 0.7rem; text-align: center; }
+        .nav-item.active { color: var(--primary-glow); }
+        .nav-item i { font-size: 1.5rem; display: block; margin-bottom: 4px; }
+
+        .glow-orange { color: var(--primary-glow); text-shadow: 0 0 10px rgba(255,153,0,0.4); }
+        .glow-green { color: var(--secondary-glow); text-shadow: 0 0 10px rgba(0,255,204,0.4); }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div style="width: 40px; height: 40px; border: 4px solid #222; border-top-color: var(--primary-glow); border-radius: 50%; animation: spin 1s infinite linear;"></div>
+        <p style="color: #555; margin-top: 15px;">جاري الاتصال بالقاعدة...</p>
+    </div>
+
+    <header class="header">
+        <div class="user-box">
+            <div class="avatar" id="avatar">M</div>
+            <div>
+                <div style="font-weight: 800; font-size: 1rem;" id="username">Mustafa Alaa</div>
+                <div style="font-size: 0.7rem; color: var(--primary-glow);">LV.2 مبتدئ 🔥</div>
+            </div>
+        </div>
+        <div style="font-size: 1.5rem;">⚙️</div>
+    </header>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <span class="val" style="color: #ff4d00;">6</span>
+            <span class="label">مكتمل</span>
+        </div>
+        <div class="stat-card main">
+            <span class="val glow-orange" id="fg-balance">0.00</span>
+            <span class="label">FG Coin</span>
+        </div>
+        <div class="stat-card">
+            <span class="val glow-green" id="usdt-balance">0.00</span>
+            <span class="label">USDT</span>
+        </div>
+    </div>
+
+    <div class="big-action-card">
+        <div>
+            <h4 style="margin:0">تسجيل الحضور اليومي</h4>
+            <p style="margin:5px 0 0; font-size:0.75rem; color:#666;">سجل دخولك يومياً لربح FG</p>
+        </div>
+        <button class="btn-checkin" onclick="dailyCheckin()">استلام</button>
+    </div>
+
+    <div class="big-action-card" style="border-style: dashed; opacity: 0.8;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <span style="font-size: 1.5rem;">📘</span>
+            <h4 style="margin:0">شرح كيفية الربح</h4>
+        </div>
+        <span> > </span>
+    </div>
+
+    <nav class="nav-bar">
+        <div class="nav-item active">🏠<br>الرئيسية</div>
+        <div class="nav-item">🎯<br>المهام</div>
+        <div class="nav-item">🏆<br>التصنيف</div>
+        <div class="nav-item">👤<br>الملف</div>
+    </nav>
+
+    <script type="module">
+        // استدعاء مكتبات Firebase من الروابط الرسمية
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, increment, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // إعدادات Firebase الخاصة بك
+        const firebaseConfig = {
+            apiKey: "AIzaSyACixZDVCNww716fRN_29xm2kCnFadkL64",
+            authDomain: "tele-ea6e7.firebaseapp.com",
+            projectId: "tele-ea6e7",
+            storageBucket: "tele-ea6e7.firebasestorage.app",
+            messagingSenderId: "693110799024",
+            appId: "1:693110799024:web:4dd4057eef17b9ed3e1975"
+        };
+
+        // تشغيل Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const tg = window.Telegram.WebApp;
+
+        // الحصول على معرف المستخدم من تيليجرام
+        let userId = "test_user_123"; // افتراضي للتجربة خارج تيليجرام
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            userId = tg.initDataUnsafe.user.id.toString();
+        }
+
+        const userRef = doc(db, "users", userId);
+
+        async function startApp() {
+            try {
+                const snap = await getDoc(userRef);
+                
+                // إذا كان المستخدم جديد، أنشئ له بيانات
+                if (!snap.exists()) {
+                    await setDoc(userRef, {
+                        name: tg.initDataUnsafe?.user?.first_name || "Mustafa",
+                        balance_fg: 0,
+                        balance_usdt: 0,
+                        level: 1,
+                        last_checkin: 0
+                    });
+                }
+
+                // تحديث الواجهة عند أي تغيير في قاعدة البيانات
+                onSnapshot(userRef, (doc) => {
+                    if (doc.exists()) {
+                        const data = doc.data();
+                        document.getElementById('fg-balance').innerText = data.balance_fg.toFixed(2);
+                        document.getElementById('usdt-balance').innerText = data.balance_usdt.toFixed(2);
+                        document.getElementById('username').innerText = data.name;
+                        document.getElementById('avatar').innerText = data.name.charAt(0);
+                    }
+                });
+
+                // إخفاء شاشة التحميل
+                document.getElementById('loader').style.display = 'none';
+
+            } catch (error) {
+                console.error("Firebase Error:", error);
+                alert("مشكلة في الاتصال بقاعدة البيانات: " + error.message);
+            }
+        }
+
+        // دالة تسجيل الحضور اليومي (مثال على تحديث البيانات)
+        window.dailyCheckin = async () => {
+            try {
+                await updateDoc(userRef, {
+                    balance_fg: increment(0.50)
+                });
+                tg.showAlert("تم تسجيل حضورك بنجاح! +0.50 FG");
+            } catch (e) {
+                alert("فشل التسجيل: " + e.message);
+            }
+        };
+
+        // تشغيل التطبيق
+        tg.ready();
+        tg.expand();
+        startApp();
+
+    </script>
+
+    <style>
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</body>
+</html>
