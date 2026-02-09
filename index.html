@@ -3,139 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FoxiGrow Full - Mustafa Alaa</title>
+    <title>FoxiGrow Ultimate - Mustafa Alaa</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #070707;
-            --card-bg: rgba(255, 255, 255, 0.05);
+            --bg: #050505;
+            --card: rgba(255, 255, 255, 0.05);
             --primary: #ff9900;
             --secondary: #00ffcc;
             --border: rgba(255, 255, 255, 0.1);
         }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-        body {
-            font-family: 'Cairo', sans-serif;
-            background-color: var(--bg-dark);
-            background-image: radial-gradient(circle at 50% 0%, #1c1c1c, #000);
-            color: #fff; margin: 0; padding-bottom: 90px;
-        }
-        /* Header */
-        .header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
-        .avatar { width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(45deg, var(--primary), #d35400); display: flex; align-items: center; justify-content: center; font-weight: 800; border: 2px solid var(--border); }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; margin: 0; padding: 0; }
+        body { font-family: 'Cairo', sans-serif; background: var(--bg); color: #fff; padding-bottom: 100px; overflow-x: hidden; }
         
-        /* Stats Area */
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; }
-        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 12px 5px; text-align: center; backdrop-filter: blur(10px); }
+        /* Header */
+        .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border); }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(45deg, var(--primary), #ff4d00); display: flex; align-items: center; justify-content: center; font-weight: 800; border: 2px solid var(--border); font-size: 1.2rem; }
+        .lvl-tag { background: rgba(255,153,0,0.1); border: 1px solid var(--primary); color: var(--primary); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; margin-top: 4px; display: inline-block; }
+
+        /* Stats Card */
+        .stats-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px; }
+        .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 15px 5px; text-align: center; backdrop-filter: blur(10px); }
         .stat-card.active { border-color: var(--primary); box-shadow: 0 0 15px rgba(255,153,0,0.1); }
-        .stat-card .val { font-size: 1.1rem; font-weight: 800; display: block; }
-        .stat-card .label { font-size: 0.6rem; color: #888; }
+        .stat-card .val { font-size: 1.2rem; font-weight: 800; display: block; margin-bottom: 4px; }
+        .stat-card .label { font-size: 0.65rem; color: #888; }
 
-        /* Main Coin Area */
-        .game-area { display: flex; flex-direction: column; align-items: center; margin-top: 10px; }
-        .coin { width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #ffd000, #ff9900); border: 10px solid rgba(255,255,255,0.05); cursor: pointer; transition: transform 0.1s; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 50px rgba(255,153,0,0.3); }
-        .coin:active { transform: scale(0.92); }
-        .coin-svg { width: 100px; fill: white; opacity: 0.9; }
+        /* Clicker Area */
+        .clicker-section { display: flex; flex-direction: column; align-items: center; margin: 20px 0; }
+        .coin-wrapper { position: relative; width: 240px; height: 240px; }
+        .coin-btn { width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ffd000, #ff9900); border: 10px solid rgba(255,255,255,0.05); cursor: pointer; transition: transform 0.05s ease-in-out; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 60px rgba(255,153,0,0.3); }
+        .coin-btn:active { transform: scale(0.95); }
+        .coin-btn img { width: 110px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.2)); }
 
-        /* Actions Section */
-        .section-title { padding: 10px 20px; font-size: 0.9rem; color: var(--primary); font-weight: bold; }
-        .action-card { background: var(--card-bg); margin: 5px 15px; padding: 15px; border-radius: 15px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .btn-action { background: var(--primary); border: none; color: #fff; padding: 8px 15px; border-radius: 10px; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
+        /* Energy Bar */
+        .energy-box { width: 80%; margin-top: 20px; text-align: center; }
+        .energy-bar { height: 12px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-top: 8px; overflow: hidden; border: 1px solid var(--border); }
+        .energy-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff9900, #ffd000); transition: width 0.3s; }
 
         /* Navigation */
-        .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,10,10,0.95); display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid var(--border); z-index: 100; }
-        .nav-item { color: #555; font-size: 0.75rem; text-align: center; cursor: pointer; }
-        .nav-item.active { color: var(--primary); }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,10,10,0.98); display: flex; justify-content: space-around; padding: 15px; border-top: 1px solid var(--border); z-index: 1000; }
+        .nav-btn { color: #666; font-size: 0.75rem; text-align: center; flex: 1; cursor: pointer; transition: 0.3s; }
+        .nav-btn.active { color: var(--primary); transform: translateY(-3px); }
+        .nav-btn i { font-size: 1.6rem; display: block; margin-bottom: 5px; }
 
-        /* Modals */
-        .modal { position: fixed; inset: 0; background: #000; z-index: 1000; display: none; flex-direction: column; padding: 20px; }
+        /* Modals (Full Screen) */
+        .modal { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: none; flex-direction: column; padding: 25px; overflow-y: auto; }
         .modal.active { display: flex; }
-        .close-modal { align-self: flex-start; background: #222; padding: 10px; border-radius: 10px; margin-bottom: 20px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .btn-close { background: var(--card); border: 1px solid var(--border); color: #fff; padding: 8px 15px; border-radius: 10px; }
 
-        #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .float-val { position: fixed; font-weight: 800; font-size: 1.5rem; color: #fff; pointer-events: none; animation: upMove 0.8s forwards; z-index: 999; }
-        @keyframes upMove { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        /* Elements */
+        .item-row { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .btn-buy { background: var(--primary); border: none; color: #fff; padding: 8px 15px; border-radius: 10px; font-weight: bold; }
+        .btn-buy.disabled { background: #333; color: #777; }
+
+        #loading-screen { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .float-text { position: absolute; font-weight: 900; font-size: 1.8rem; pointer-events: none; animation: floatUp 0.8s ease-out forwards; }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div id="loader">
-        <div style="width: 40px; height: 40px; border: 4px solid #222; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s infinite linear;"></div>
-        <p style="margin-top:15px; font-size:0.9rem; color:#888;">FoxiGrow Pro - Mustafa Alaa</p>
+    <div id="loading-screen">
+        <div style="width: 50px; height: 50px; border: 4px solid #222; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s infinite linear;"></div>
+        <p style="margin-top: 20px; font-weight: bold;">FoxiGrow Pro V.Final</p>
     </div>
 
-    <div id="home-page">
-        <header class="header">
-            <div style="display:flex; align-items:center; gap:10px;">
+    <div id="home-view">
+        <div class="header">
+            <div class="user-info">
                 <div class="avatar" id="avatar">M</div>
                 <div>
-                    <div id="username" style="font-weight: 800; font-size: 1rem;">Mustafa</div>
-                    <div style="font-size: 0.7rem; color: var(--primary);">المستوى: برونزي 🥉</div>
+                    <h4 id="username">Mustafa Alaa</h4>
+                    <span class="lvl-tag" id="level-label">مبتدئ • Level 1</span>
                 </div>
             </div>
-            <div onclick="shareRef()" style="background: #222; padding: 5px 12px; border-radius: 10px; font-size: 0.8rem; border: 1px solid var(--primary); cursor: pointer;">Invite 🎁</div>
-        </header>
+            <div onclick="openModal('shop-modal')" style="font-size: 1.5rem; cursor: pointer;">🛒</div>
+        </div>
 
-        <div class="stats-grid">
+        <div class="stats-box">
+            <div class="stat-card">
+                <span class="val" id="ref-count">0</span>
+                <span class="label">الأصدقاء</span>
+            </div>
             <div class="stat-card active">
-                <span class="val" id="fg-balance" style="color:var(--primary)">0.00</span>
+                <span class="val" id="fg-balance" style="color: var(--primary);">0.00</span>
                 <span class="label">FG Coin</span>
             </div>
             <div class="stat-card">
-                <span class="val" id="usdt-balance" style="color:var(--secondary)">0.00</span>
+                <span class="val" id="usdt-balance" style="color: var(--secondary);">0.00</span>
                 <span class="label">USDT</span>
             </div>
-            <div class="stat-card">
-                <span class="val" id="ref-count">0</span>
-                <span class="label">أصدقاء</span>
-            </div>
         </div>
 
-        <div class="game-area">
-            <div class="coin" onpointerdown="tapCoin(event)">
-                <svg class="coin-svg" viewBox="0 0 24 24"><path d="M12 22L1.5 8 12 2l10.5 6L12 22zm0-2.5l8-10-8-5.5-8 5.5 8 10z"/></svg>
+        <div class="clicker-section">
+            <div class="coin-wrapper">
+                <div class="coin-btn" onpointerdown="doTap(event)">
+                    <img src="https://cdn-icons-png.flaticon.com/512/217/217853.png" alt="Coin">
+                </div>
             </div>
-            <div style="margin-top:15px; color:#666; font-size:0.8rem;">⚡ 1000 / 1000</div>
+            <div class="energy-box">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #888;">
+                    <span>⚡ الطاقة</span>
+                    <span id="energy-text">1000 / 1000</span>
+                </div>
+                <div class="energy-bar">
+                    <div class="energy-fill" id="energy-fill"></div>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <div class="section-title">المهمات اليومية</div>
-        <div class="action-card">
+    <div id="shop-modal" class="modal">
+        <div class="modal-header">
+            <h3>المتجر 🛒</h3>
+            <button class="btn-close" onclick="closeModal('shop-modal')">إغلاق</button>
+        </div>
+        <div class="item-row">
             <div>
-                <h4 style="margin:0">مهمة الانضمام</h4>
-                <p style="margin:5px 0 0; font-size:0.75rem; color:#666;">انضم لقناتنا واكسب +500 FG</p>
+                <h4>زيادة الطاقة القصوى</h4>
+                <p style="font-size: 0.7rem; color: #888;">+500 طاقة إضافية</p>
             </div>
-            <button class="btn-action" onclick="window.open('https://t.me/tofe109tofebot')">Go</button>
+            <button class="btn-buy" onclick="buyItem('energy', 5000)">5000 FG</button>
+        </div>
+        <div class="item-row">
+            <div>
+                <h4>رصيد 1.00 USDT</h4>
+                <p style="font-size: 0.7rem; color: #888;">تحويل النقاط لعملة حقيقية</p>
+            </div>
+            <button class="btn-buy" onclick="buyItem('usdt', 50000)">50,000 FG</button>
         </div>
     </div>
 
-    <div id="ref-modal" class="modal">
-        <div class="close-modal" onclick="closeModal('ref-modal')">X</div>
-        <h2>دعوة الأصدقاء</h2>
-        <p style="color:#888;">اربح 2,000 نقطة عن كل صديق يدخل من رابطك.</p>
-        <div id="ref-link" style="background:#1a1a1a; padding:15px; border-radius:10px; word-break:break-all; border: 1px dashed var(--primary);">جاري تحميل الرابط...</div>
-        <button class="btn-action" style="margin-top:20px; width:100%;" onclick="copyRef()">Copy Link</button>
+    <div id="tasks-modal" class="modal">
+        <div class="modal-header">
+            <h3>المهام اليومية 🎯</h3>
+            <button class="btn-close" onclick="closeModal('tasks-modal')">إغلاق</button>
+        </div>
+        <div id="tasks-list">
+            <div class="item-row">
+                <div>
+                    <h4>الاشتراك بقناتنا</h4>
+                    <p style="font-size: 0.7rem; color: #888;">اربح +1000 FG</p>
+                </div>
+                <button class="btn-buy" onclick="completeTask(1000, 'https://t.me/tofe109tofebot')">GO</button>
+            </div>
+        </div>
     </div>
 
-    <div id="rank-modal" class="modal">
-        <div class="close-modal" onclick="closeModal('rank-modal')">X</div>
-        <h2>قائمة المتصدرين</h2>
-        <div id="leaderboard-list">جاري تحميل الترتيب...</div>
-    </div>
-
-    <nav class="nav-bar">
-        <div class="nav-item active" onclick="closeAll()">🏠<br>الرئيسية</div>
-        <div class="nav-item" onclick="openModal('ref-modal')">🎁<br>الإحالة</div>
-        <div class="nav-item" onclick="openModal('rank-modal')">🏆<br>التصنيف</div>
-        <div class="nav-item">👤<br>الملف</div>
+    <nav class="bottom-nav">
+        <div class="nav-btn active" onclick="closeAll()"><i>🏠</i>الرئيسية</div>
+        <div class="nav-btn" onclick="openModal('tasks-modal')"><i>🎯</i>المهام</div>
+        <div class="nav-btn" onclick="openModal('shop-modal')"><i>🛒</i>المتجر</div>
+        <div class="nav-btn" onclick="shareRef()"><i>🎁</i>دعوة</div>
     </nav>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, increment, updateDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, increment, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // إعدادات مشروعك الجديد
         const firebaseConfig = {
             apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ",
             authDomain: "tele-follow.firebaseapp.com",
@@ -151,101 +179,107 @@
 
         let userId = tg.initDataUnsafe?.user?.id?.toString() || "dev_mustafa";
         const userRef = doc(db, "users", userId);
+        let userState = { energy: 1000, maxEnergy: 1000, balance: 0 };
 
-        async function initApp() {
-            try {
-                const snap = await getDoc(userRef);
-                if (!snap.exists()) {
-                    await setDoc(userRef, {
-                        name: tg.initDataUnsafe?.user?.first_name || "Mustafa",
-                        balance_fg: 0,
-                        balance_usdt: 0,
-                        friends: 0,
-                        last_sync: Date.now()
-                    });
-                    checkReferral(); // فحص إذا دخل عبر رابط دعوة
-                }
-
-                // رابط الدعوة
-                document.getElementById('ref-link').innerText = "https://t.me/tofe109tofebot?start=ref_" + userId;
-
-                // تحديث البيانات لحظياً
-                onSnapshot(userRef, (d) => {
-                    const data = d.data();
-                    document.getElementById('fg-balance').innerText = data.balance_fg.toFixed(2);
-                    document.getElementById('usdt-balance').innerText = data.balance_usdt.toFixed(2);
-                    document.getElementById('ref-count').innerText = data.friends || 0;
-                    document.getElementById('username').innerText = data.name;
-                    document.getElementById('avatar').innerText = data.name.charAt(0);
+        async function init() {
+            const snap = await getDoc(userRef);
+            if (!snap.exists()) {
+                await setDoc(userRef, {
+                    name: tg.initDataUnsafe?.user?.first_name || "Mustafa",
+                    balance_fg: 0,
+                    balance_usdt: 0,
+                    energy: 1000,
+                    max_energy: 1000,
+                    level: 1,
+                    friends: 0
                 });
-
-                document.getElementById('loader').style.display = 'none';
-            } catch (e) {
-                alert("خطأ: تأكد من تفعيل Rules في فايربيس");
+                checkRef();
             }
+
+            onSnapshot(userRef, (d) => {
+                const data = d.data();
+                userState.balance = data.balance_fg;
+                userState.maxEnergy = data.max_energy;
+                document.getElementById('fg-balance').innerText = data.balance_fg.toLocaleString();
+                document.getElementById('usdt-balance').innerText = data.balance_usdt.toFixed(2);
+                document.getElementById('username').innerText = data.name;
+                document.getElementById('avatar').innerText = data.name.charAt(0);
+                document.getElementById('ref-count').innerText = data.friends || 0;
+                document.getElementById('level-label').innerText = `Level ${data.level} • ${data.level > 5 ? 'محترف' : 'مبتدئ'}`;
+            });
+
+            startEnergyRegen();
+            document.getElementById('loading-screen').style.display = 'none';
         }
 
-        // النقر على العملة
-        window.tapCoin = async (e) => {
-            let x = e.clientX, y = e.clientY;
-            createFloat(x, y);
-            tg.HapticFeedback.impactOccurred('light');
+        window.doTap = async (e) => {
+            if (userState.energy <= 0) return;
             
-            // تحديث محلي سريع ثم مزامنة
-            await updateDoc(userRef, { balance_fg: increment(0.1) });
+            userState.energy -= 1;
+            updateEnergyUI();
+            createFloat(e.clientX, e.clientY);
+            tg.HapticFeedback.impactOccurred('light');
+
+            await updateDoc(userRef, { balance_fg: increment(0.2) });
         };
+
+        function updateEnergyUI() {
+            const pct = (userState.energy / userState.maxEnergy) * 100;
+            document.getElementById('energy-fill').style.width = pct + "%";
+            document.getElementById('energy-text').innerText = `${userState.energy} / ${userState.maxEnergy}`;
+        }
+
+        function startEnergyRegen() {
+            setInterval(() => {
+                if (userState.energy < userState.maxEnergy) {
+                    userState.energy += 1;
+                    updateEnergyUI();
+                }
+            }, 2000);
+        }
+
+        window.buyItem = async (type, price) => {
+            if (userState.balance < price) return tg.showAlert("رصيدك غير كافٍ!");
+            
+            if (type === 'energy') {
+                await updateDoc(userRef, { balance_fg: increment(-price), max_energy: increment(500) });
+            } else if (type === 'usdt') {
+                await updateDoc(userRef, { balance_fg: increment(-price), balance_usdt: increment(1.0) });
+            }
+            tg.showAlert("تمت عملية الشراء بنجاح!");
+        };
+
+        window.shareRef = () => {
+            const link = `https://t.me/tofe109tofebot?start=ref_${userId}`;
+            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent("انضم إليّ في FoxiGrow وابدأ بجمع العملات!")}`);
+        };
+
+        async function checkRef() {
+            const start = tg.initDataUnsafe?.start_param;
+            if (start?.startsWith('ref_')) {
+                const inviter = start.split('_')[1];
+                if (inviter !== userId) {
+                    await updateDoc(doc(db, "users", inviter), { balance_fg: increment(5000), friends: increment(1) });
+                    await updateDoc(userRef, { balance_fg: increment(2000) });
+                }
+            }
+        }
 
         function createFloat(x, y) {
-            const div = document.createElement('div');
-            div.className = 'float-val';
-            div.style.left = x + 'px'; div.style.top = y + 'px';
-            div.innerText = "+0.1";
-            document.body.appendChild(div);
-            setTimeout(() => div.remove(), 800);
+            const el = document.createElement('div');
+            el.className = 'float-text';
+            el.style.left = x + 'px'; el.style.top = y + 'px';
+            el.innerText = "+0.2";
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 800);
         }
 
-        // التعامل مع الإحالات
-        async function checkReferral() {
-            const startParam = tg.initDataUnsafe?.start_param;
-            if (startParam && startParam.startsWith('ref_')) {
-                const inviterId = startParam.split('_')[1];
-                if (inviterId !== userId) {
-                    const inviterRef = doc(db, "users", inviterId);
-                    await updateDoc(inviterRef, { 
-                        balance_fg: increment(2000), 
-                        friends: increment(1) 
-                    });
-                    await updateDoc(userRef, { balance_fg: increment(1000) });
-                    tg.showAlert("مبروك! ربحت 1000 نقطة من رابط الدعوة");
-                }
-            }
-        }
-
-        // المتصدرين
-        window.openModal = async (id) => {
-            document.getElementById(id).classList.add('active');
-            if (id === 'rank-modal') {
-                const q = query(collection(db, "users"), orderBy("balance_fg", "desc"), limit(10));
-                const snap = await getDocs(q);
-                let html = "";
-                let i = 1;
-                snap.forEach(d => {
-                    html += `<div class="action-card"><span>#${i} ${d.data().name}</span><b>${d.data().balance_fg.toFixed(0)} FG</b></div>`;
-                    i++;
-                });
-                document.getElementById('leaderboard-list').innerHTML = html;
-            }
-        };
-
+        window.openModal = (id) => document.getElementById(id).classList.add('active');
         window.closeModal = (id) => document.getElementById(id).classList.remove('active');
         window.closeAll = () => document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
-        window.copyRef = () => {
-            const link = document.getElementById('ref-link').innerText;
-            navigator.clipboard.writeText(link);
-            tg.showAlert("تم نسخ رابط الدعوة!");
-        };
 
-        tg.ready(); tg.expand(); initApp();
+        tg.ready(); tg.expand(); init();
     </script>
+    <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
 </body>
 </html>
