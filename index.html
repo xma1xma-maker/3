@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dungeon Game</title>
+    <title>Debug Game</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
@@ -11,167 +11,111 @@
             background-color: #000;
             color: white;
             font-family: sans-serif;
-            overflow: hidden; /* لمنع السحب */
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             height: 100vh;
         }
 
-        /* حاوية اللعبة */
         .game-container {
             position: relative;
             width: 100%;
             flex-grow: 1;
-            background-color: #1a1a1a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background-color: #333; /* لون خلفية لتمييز الحدود */
+            overflow: hidden;
         }
 
-        /* صورة الخريطة */
         .game-map {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* تضمن ظهور الخريطة كاملة */
+            object-fit: fill; /* تمديد الصورة لملء الشاشة بالكامل لتسهيل الضبط */
             position: absolute;
             top: 0;
             left: 0;
             z-index: 1;
         }
 
-        /* المناطق القابلة للضغط (الغرف) */
+        /* تنسيق مناطق الضغط - جعلناها ظاهرة الآن */
         .click-zone {
             position: absolute;
             z-index: 10;
-            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.2s;
-            /* border: 1px solid rgba(255, 255, 255, 0.2);  للتجربة: فعل هذا السطر لترى المربعات */
+            
+            /* هذا هو التغيير: لون أحمر شفاف لترى المكان */
+            background-color: rgba(255, 0, 0, 0.3); 
+            border: 2px solid red;
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px black;
         }
 
-        /* تأثير عند اختيار الغرفة */
         .click-zone.selected {
-            box-shadow: 0 0 15px #ffd700, inset 0 0 20px rgba(255, 215, 0, 0.5);
-            border: 2px solid #ffd700;
-            background-color: rgba(255, 215, 0, 0.1);
+            background-color: rgba(0, 255, 0, 0.5); /* الأخضر عند الاختيار */
+            border-color: #00ff00;
+            box-shadow: 0 0 15px #00ff00;
         }
 
-        /* تأثير التدمير */
-        .click-zone.destroyed {
-            background-color: rgba(255, 0, 0, 0.6);
-            box-shadow: 0 0 20px red;
-            background-image: url('https://cdn-icons-png.flaticon.com/512/1161/1161388.png'); /* أيقونة انفجار */
-            background-size: 60%;
-            background-repeat: no-repeat;
-            background-position: center;
-            animation: shake 0.5s;
-        }
-
-        /* مواقع الغرف (نسب مئوية تقريبية بناءً على الصورة) */
-        /* يمكنك تعديل النسب (top, left) لتحريك المربعات */
+        /* التحكم في مواقع الغرف - عدل الأرقام هنا */
+        #zone-king { top: 10%; left: 5%; width: 40%; height: 15%; }
+        #zone-treasure { top: 10%; left: 55%; width: 40%; height: 15%; }
         
-        #zone-king { top: 15%; left: 10%; width: 35%; height: 15%; }
-        #zone-treasure { top: 18%; left: 50%; width: 35%; height: 15%; }
-        #zone-mithril { top: 35%; left: 10%; width: 30%; height: 15%; }
-        #zone-library { top: 35%; left: 60%; width: 30%; height: 15%; }
-        #zone-bridge { top: 55%; left: 30%; width: 40%; height: 15%; }
+        #zone-mithril { top: 35%; left: 5%; width: 30%; height: 15%; }
+        #zone-library { top: 35%; left: 65%; width: 30%; height: 15%; }
+        
+        #zone-bridge { top: 60%; left: 20%; width: 60%; height: 15%; }
 
-        /* واجهة التحكم السفلية */
         .ui-panel {
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
+            background: #222;
+            padding: 20px;
             text-align: center;
             z-index: 20;
-            border-top: 2px solid #333;
         }
-
-        .status-text {
-            margin-bottom: 10px;
-            font-size: 1.1em;
-            color: #ccc;
-        }
-
-        .btn-main {
-            background: linear-gradient(to bottom, #FFD700, #FFA500);
+        button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: gold;
             border: none;
-            padding: 12px 40px;
-            border-radius: 25px;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #3d2200;
-            width: 80%;
-        }
-        
-        .btn-main:disabled { filter: grayscale(100%); }
-
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-            100% { transform: translateX(0); }
+            border-radius: 10px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
     <div class="game-container">
-        <img src="map.jpg" alt="Map" class="game-map">
+        <img src="map.jpg" class="game-map" alt="الصورة غير موجودة">
 
-        <div class="click-zone" id="zone-king" onclick="selectRoom('king')"></div>
-        <div class="click-zone" id="zone-treasure" onclick="selectRoom('treasure')"></div>
-        <div class="click-zone" id="zone-mithril" onclick="selectRoom('mithril')"></div>
-        <div class="click-zone" id="zone-library" onclick="selectRoom('library')"></div>
-        <div class="click-zone" id="zone-bridge" onclick="selectRoom('bridge')"></div>
+        <div class="click-zone" id="zone-king" onclick="select(this)">الملك</div>
+        <div class="click-zone" id="zone-treasure" onclick="select(this)">الكنز</div>
+        <div class="click-zone" id="zone-mithril" onclick="select(this)">المنجم</div>
+        <div class="click-zone" id="zone-library" onclick="select(this)">المكتبة</div>
+        <div class="click-zone" id="zone-bridge" onclick="select(this)">الجسر</div>
     </div>
 
     <div class="ui-panel">
-        <div class="status-text" id="status">اختر مكاناً للاختباء</div>
-        <button class="btn-main" id="actionBtn" onclick="startGame()">تثبيت (100 عملة)</button>
+        <h3 id="status">اضغط على المربع الأحمر</h3>
+        <button onclick="tg.close()">إغلاق</button>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand();
 
-        let selectedZoneId = null;
-        let isPlaying = false;
-        
-        // قائمة بمعرفات المناطق
-        const zones = ['king', 'treasure', 'mithril', 'library', 'bridge'];
-
-        function selectRoom(zoneId) {
-            if (isPlaying) return;
-
-            // إزالة التحديد السابق
-            document.querySelectorAll('.click-zone').forEach(el => el.classList.remove('selected'));
+        function select(el) {
+            // إزالة التحديد من الجميع
+            document.querySelectorAll('.click-zone').forEach(z => z.classList.remove('selected'));
             
-            // تحديد الجديد
-            const el = document.getElementById('zone-' + zoneId);
+            // تحديد العنصر المضغوط
             el.classList.add('selected');
             
-            selectedZoneId = zoneId;
-            document.getElementById('status').innerText = "تم اختيار: " + getRoomName(zoneId);
+            document.getElementById('status').innerText = "تم اختيار: " + el.innerText;
             tg.HapticFeedback.selectionChanged();
         }
-
-        function startGame() {
-            if (!selectedZoneId) {
-                tg.showAlert("⚠️ يجب أن تختار غرفة أولاً!");
-                return;
-            }
-
-            isPlaying = true;
-            document.getElementById('actionBtn').disabled = true;
-            document.getElementById('actionBtn').innerText = "جاري اللعب...";
-            document.getElementById('status').innerText = "الوحش يختار غرفة لتدميرها...";
-
-            // محاكاة الانتظار
-            setTimeout(() => {
-                // اختيار غرفة عشوائية لتدميرها
-                const randomZone = zones[Math.floor(Math.random() * zones.length)];
-                
-                // إظهار التدمير
-                const destroyedEl = document.getElementById('zone-' + randomZone);
-                destroyedEl.classList.add('destroyed');
-
-                if (selectedZone
+    </script>
+</body>
+</html>
