@@ -4,32 +4,72 @@
   <meta charset="UTF-8" />
   <title>BTC WIN</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Telegram -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <div class="app">
-    <h1>BTC WIN</h1>
+<div class="container">
 
-    <div class="card">
-      <p>رصيدك</p>
-      <h2 id="balance">0.00 USDT</h2>
+  <!-- Header -->
+  <header>
+    <h1>BTC <span>WIN</span></h1>
+    <div class="level">LV 1</div>
+  </header>
+
+  <!-- Balance Card -->
+  <div class="balance-card">
+    <p>رصيدك الحالي</p>
+    <h2 id="balance">0.00 <small>USDT</small></h2>
+    <button class="primary">💸 سحب الأرباح</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <i class="ri-user-add-line"></i>
+      <span>الإحالات</span>
+      <b>0</b>
     </div>
-
-    <div class="grid">
-      <div class="box">Level<br><b>1</b></div>
-      <div class="box">Referrals<br><b>0</b></div>
+    <div class="stat">
+      <i class="ri-trophy-line"></i>
+      <span>الترتيب</span>
+      <b>#999</b>
     </div>
   </div>
 
-  <nav>
-    <a href="index.html">🏠</a>
-    <a href="tasks.html">📋</a>
-    <a href="withdraw.html">💸</a>
-    <a href="profile.html">👤</a>
-  </nav>
+  <!-- Actions -->
+  <div class="actions">
+    <div class="action">
+      <i class="ri-calendar-check-line"></i>
+      <span>تسجيل حضور</span>
+    </div>
+    <div class="action">
+      <i class="ri-task-line"></i>
+      <span>المهام</span>
+    </div>
+    <div class="action">
+      <i class="ri-share-forward-line"></i>
+      <span>دعوة</span>
+    </div>
+  </div>
 
-  <script src="app.js"></script>
+</div>
+
+<!-- Bottom Nav -->
+<nav>
+  <a class="active"><i class="ri-home-5-fill"></i></a>
+  <a><i class="ri-task-line"></i></a>
+  <a><i class="ri-wallet-3-line"></i></a>
+  <a><i class="ri-user-3-line"></i></a>
+</nav>
+
+<script src="app.js"></script>
 </body>
 </html>
