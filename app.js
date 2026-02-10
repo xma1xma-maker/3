@@ -1,11 +1,18 @@
 // ================= TELEGRAM =================
 const tg = window.Telegram.WebApp;
+
+// 🔴 مهم جدًا
+tg.ready();
 tg.expand();
 
 const tgUser = tg.initDataUnsafe?.user;
 
+console.log("Telegram initData:", tg.initDataUnsafe);
+console.log("Telegram user:", tgUser);
+
 if (!tgUser) {
-  alert("Telegram user not found");
+  alert("❌ افتح التطبيق من داخل Telegram فقط");
+  throw new Error("Telegram user not found");
 }
 
 // ================= FIREBASE =================
@@ -27,11 +34,11 @@ const firebaseConfig = {
   appId: "1:311701431089:web:fcba431dcae893a87cc610"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getFirestore(firebaseApp);
 
 // ================= USER =================
-const userId = String(tgUser.id);
+const userId = String(tgUser.id); // 🔥 Document ID = telegramId
 const userRef = doc(db, "users", userId);
 
 // ================= INIT USER =================
@@ -41,13 +48,17 @@ async function initUser() {
   if (!snap.exists()) {
     await setDoc(userRef, {
       telegramId: userId,
-      username: tgUser.username || tgUser.first_name,
+      username: tgUser.username || tgUser.first_name || "User",
       usdt: 0,
       level: 1,
       referrals: 0,
       banned: false,
       createdAt: new Date()
     });
+
+    console.log("✅ User created:", userId);
+  } else {
+    console.log("ℹ️ User already exists:", userId);
   }
 }
 
@@ -55,4 +66,39 @@ initUser();
 
 // ================= LIVE DATA =================
 onSnapshot(userRef, (snap) => {
-  if (!sn
+  if (!snap.exists()) return;
+
+  const data = snap.data();
+
+  // الرصيد
+  const balanceEl = document.getElementById("balance");
+  if (balanceEl) {
+    balanceEl.innerHTML = `${data.usdt.toFixed(2)} <small>USDT</small>`;
+  }
+
+  // المستوى
+  const levelEl = document.querySelector(".level");
+  if (levelEl) {
+    levelEl.innerText = "LV " + data.level;
+  }
+
+  // الإحالات (أول stat)
+  const referralsEl = document.querySelector(".stat b");
+  if (referralsEl) {
+    referralsEl.innerText = data.referrals;
+  }
+
+  // حظر
+  if (data.banned) {
+    alert("🚫 حسابك محظور");
+    tg.close();
+  }
+});
+
+// ================= BUTTONS =================
+const withdrawBtn = document.querySelector(".primary");
+if (withdrawBtn) {
+  withdrawBtn.onclick = () => {
+    window.location.href = "withdraw.html";
+  };
+}
