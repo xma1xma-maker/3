@@ -16,7 +16,7 @@ const userId = tgUser ? String(tgUser.id) : "123456789_TEST";
 const userRef = doc(db, "users", userId);
 let hasSharedToday = false;
 
-// ================= CUSTOM ALERT FUNCTION =================
+// ================= CUSTOM ALERT FUNCTION (IMPROVED) =================
 const toastEl = document.getElementById('custom-toast');
 let toastTimeout;
 
@@ -26,19 +26,35 @@ let toastTimeout;
  */
 function showCustomAlert(message, type = 'success') {
     if (!toastEl) return;
-    const icons = {
-        success: 'ri-checkbox-circle-fill',
-        warning: 'ri-error-warning-fill',
-        error: 'ri-close-circle-fill',
-    };
+
+    // مسح أي مؤقت سابق لضمان عدم التداخل
     clearTimeout(toastTimeout);
-    toastEl.className = `custom-toast ${type}`;
-    toastEl.innerHTML = `<i class="${icons[type]}"></i> ${message}`;
-    toastEl.classList.add('show');
-    toastTimeout = setTimeout(() => {
-        toastEl.classList.remove('show');
-    }, 3000);
+
+    // 1. إخفاء التنبيه القديم فوراً (إذا كان ظاهراً) لإعادة ضبط الحركة
+    toastEl.classList.remove('show');
+
+    // 2. الانتظار للحظة قصيرة جداً للسماح للمتصفح بتطبيق الإخفاء
+    setTimeout(() => {
+        const icons = {
+            success: 'ri-checkbox-circle-fill',
+            warning: 'ri-error-warning-fill',
+            error: 'ri-close-circle-fill',
+        };
+
+        // 3. تحديث المحتوى والنوع
+        toastEl.className = `custom-toast ${type}`;
+        toastEl.innerHTML = `<i class="${icons[type]}"></i> ${message}`;
+        
+        // 4. إظهار التنبيه الجديد بالحركة
+        toastEl.classList.add('show');
+
+        // 5. جدولة الإخفاء التلقائي
+        toastTimeout = setTimeout(() => {
+            toastEl.classList.remove('show');
+        }, 3000);
+    }, 100); // تأخير بسيط (100 ميلي ثانية) لإعادة ضبط الحركة
 }
+
 
 // ================= INIT USER =================
 async function initUser() {
