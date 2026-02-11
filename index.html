@@ -1,89 +1,102 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
   <title>BTC WIN</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Telegram -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <!-- Icons -->
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
 <div class="container">
-
   <!-- Header -->
   <header>
-    <h1>BTC <span>WIN</span></h1>
-    <div class="level" id="level">LV 1</div>
+    <div class="profile-snippet">
+        <div class="avatar">
+            <span id="user-initial">U</span>
+        </div>
+        <div>
+            <h1 id="username">Username</h1>
+            <div class="level-bar">
+                <span>مبتدئ</span>
+                <div class="progress-bar">
+                    <div class="progress" id="level-progress" style="width: 30%;"></div>
+                </div>
+                <div class="level" id="level">LV.1</div>
+            </div>
+        </div>
+    </div>
   </header>
 
-  <!-- Balance Card -->
-  <div class="balance-card">
-    <p>رصيدك الحالي</p>
-    <h2 id="balance">0.00 <small>USDT</small></h2>
-
-    <!-- عداد اليوم التالي -->
-    <div id="countdown" class="countdown">
-      ⏳ يتم الحساب...
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-item">
+      <i class="ri-check-double-line"></i>
+      <b id="tasks-completed">0</b>
+      <span>مكتمل</span>
     </div>
-
-    <button class="primary">💸 سحب الأرباح</button>
-  </div>
-
-  <!-- Stats -->
-  <div class="stats">
-    <div class="stat">
-      <i class="ri-user-add-line"></i>
-      <span>الإحالات</span>
-      <b id="referrals">0</b>
+    <div class="stat-item">
+      <i class="ri-copper-coin-line"></i>
+      <b id="local-coin">0.0</b>
+      <span>BTC Coin</span>
     </div>
-    <div class="stat">
-      <i class="ri-trophy-line"></i>
-      <span>الترتيب</span>
-      <b>#999</b>
+    <div class="stat-item">
+      <i class="ri-wallet-3-line"></i>
+      <b id="balance">0.00</b>
+      <span>USDT</span>
     </div>
   </div>
 
-  <!-- Actions -->
-  <div class="actions">
-
-    <!-- تسجيل حضور -->
-    <div class="action checkin">
-      <i class="ri-calendar-check-line"></i>
-      <span>تسجيل حضور يومي</span>
+  <!-- Daily Check-in -->
+  <div class="card-action">
+    <div>
+      <h4>تسجيل الحضور اليومي</h4>
+      <small id="streak-info">إجمالي 0 يوم | تسلسل 0 يوم</small>
     </div>
+    <button id="checkin-btn" class="checkin-btn">
+        <i class="ri-gift-2-line"></i>
+        <span id="countdown">التحقق...</span>
+    </button>
+  </div>
 
-    <!-- المهام -->
-    <div class="action" onclick="window.location.href='tasks.html'">
-      <i class="ri-task-line"></i>
-      <span>المهام</span>
+  <!-- Guide -->
+  <div class="card-action">
+    <div>
+      <h4>الدليل الرسمي</h4>
+      <small>تعلم كيفية كسب المكافآت</small>
     </div>
+    <i class="ri-arrow-left-s-line"></i>
+  </div>
 
-    <!-- دعوة -->
-    <div class="action invite">
-      <i class="ri-share-forward-line"></i>
-      <span>دعوة أصدقاء</span>
+  <!-- Hot Tasks -->
+  <h3 class="section-title">🔥 المهام الساخنة</h3>
+  <div class="task-item">
+    <div class="task-info">
+        <div class="task-icon"><i class="ri-telegram-line"></i></div>
+        <div>
+            <h4>انضم إلى قناة BTC WIN</h4>
+            <small class="task-reward">
+                <i class="ri-copper-coin-line"></i> 0.2+
+                <i class="ri-wallet-3-line"></i> 0.02+
+            </small>
+        </div>
     </div>
-
+    <a href="https://t.me/BTCWIN_Official" target="_blank" class="task-button">
+        <i class="ri-arrow-right-s-line"></i>
+    </a>
   </div>
 
 </div>
 
 <!-- Bottom Nav -->
 <nav>
-  <a class="active"><i class="ri-home-5-fill"></i></a>
-  <a onclick="window.location.href='tasks.html'"><i class="ri-task-line"></i></a>
-  <a onclick="window.location.href='withdraw.html'"><i class="ri-wallet-3-line"></i></a>
-  <a><i class="ri-user-3-line"></i></a>
+  <a href="index.html" class="active"><i class="ri-home-5-fill"></i><span>الرئيسية</span></a>
+  <a href="tasks.html"><i class="ri-task-line"></i><span>المهام</span></a>
+  <a href="leaderboard.html"><i class="ri-trophy-line"></i><span>التصنيف</span></a>
+  <a href="profile.html"><i class="ri-user-3-line"></i><span>الشخصي</span></a>
 </nav>
 
 <script type="module" src="app.js"></script>
-
 </body>
 </html>
