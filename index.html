@@ -20,7 +20,7 @@
   <!-- Header -->
   <header>
     <h1>BTC <span>WIN</span></h1>
-    <div class="level">LV 1</div>
+    <div class="level" id="level">LV 1</div>
   </header>
 
   <!-- Balance Card -->
@@ -35,7 +35,7 @@
     <div class="stat">
       <i class="ri-user-add-line"></i>
       <span>الإحالات</span>
-      <b>0</b>
+      <b id="referrals">0</b>
     </div>
     <div class="stat">
       <i class="ri-trophy-line"></i>
@@ -46,15 +46,17 @@
 
   <!-- Actions -->
   <div class="actions">
-    <div class="action">
+    <div class="action checkin">
       <i class="ri-calendar-check-line"></i>
       <span>تسجيل حضور</span>
     </div>
-    <div class="action">
+
+    <div class="action" onclick="window.location.href='tasks.html'">
       <i class="ri-task-line"></i>
       <span>المهام</span>
     </div>
-    <div class="action">
+
+    <div class="action invite">
       <i class="ri-share-forward-line"></i>
       <span>دعوة</span>
     </div>
@@ -65,11 +67,12 @@
 <!-- Bottom Nav -->
 <nav>
   <a class="active"><i class="ri-home-5-fill"></i></a>
-  <a><i class="ri-task-line"></i></a>
-  <a><i class="ri-wallet-3-line"></i></a>
+  <a onclick="window.location.href='tasks.html'"><i class="ri-task-line"></i></a>
+  <a onclick="window.location.href='withdraw.html'"><i class="ri-wallet-3-line"></i></a>
   <a><i class="ri-user-3-line"></i></a>
 </nav>
 
+<!-- مهم جداً -->
 <script type="module" src="app.js"></script>
 
 </body>
