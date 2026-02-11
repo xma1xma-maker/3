@@ -27,6 +27,12 @@
   <div class="balance-card">
     <p>رصيدك الحالي</p>
     <h2 id="balance">0.00 <small>USDT</small></h2>
+
+    <!-- عداد اليوم التالي -->
+    <div id="countdown" class="countdown">
+      ⏳ يتم الحساب...
+    </div>
+
     <button class="primary">💸 سحب الأرباح</button>
   </div>
 
@@ -46,20 +52,25 @@
 
   <!-- Actions -->
   <div class="actions">
+
+    <!-- تسجيل حضور -->
     <div class="action checkin">
       <i class="ri-calendar-check-line"></i>
-      <span>تسجيل حضور</span>
+      <span>تسجيل حضور يومي</span>
     </div>
 
+    <!-- المهام -->
     <div class="action" onclick="window.location.href='tasks.html'">
       <i class="ri-task-line"></i>
       <span>المهام</span>
     </div>
 
+    <!-- دعوة -->
     <div class="action invite">
       <i class="ri-share-forward-line"></i>
-      <span>دعوة</span>
+      <span>دعوة أصدقاء</span>
     </div>
+
   </div>
 
 </div>
@@ -72,7 +83,6 @@
   <a><i class="ri-user-3-line"></i></a>
 </nav>
 
-<!-- مهم جداً -->
 <script type="module" src="app.js"></script>
 
 </body>
