@@ -5,8 +5,9 @@ tg.expand();
 const tgUser = tg.initDataUnsafe?.user;
 
 // ================= FIREBASE =================
+// *** تم إضافة addDoc و serverTimestamp ***
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
 const app = initializeApp(firebaseConfig );
 const db = getFirestore(app);
@@ -15,37 +16,24 @@ const db = getFirestore(app);
 const userId = tgUser ? String(tgUser.id) : "123456789_TEST";
 const userRef = doc(db, "users", userId);
 let hasSharedToday = false;
+let currentUserData = null; // *** متغير جديد لتخزين بيانات المستخدم ***
 
-// ================= CUSTOM MODAL FUNCTION (NEW) =================
+// ================= CUSTOM MODAL FUNCTION =================
 const modalOverlay = document.getElementById('custom-modal');
 const modalContent = document.querySelector('.modal-content');
 const modalIcon = document.getElementById('modal-icon');
 const modalMessage = document.getElementById('modal-message');
 const modalCloseBtn = document.getElementById('modal-close-btn');
 
-/**
- * @param {string} message - The message to display.
- * @param {'success' | 'warning' | 'error'} type - The type of modal.
- */
 function showModal(message, type = 'success') {
     if (!modalOverlay) return;
-
-    const icons = {
-        success: 'ri-checkbox-circle-fill',
-        warning: 'ri-error-warning-fill',
-        error: 'ri-close-circle-fill',
-    };
-
-    // تحديث المحتوى
+    const icons = { success: 'ri-checkbox-circle-fill', warning: 'ri-error-warning-fill', error: 'ri-close-circle-fill' };
     modalContent.className = `modal-content ${type}`;
     modalIcon.className = icons[type];
     modalMessage.innerText = message;
-
-    // إظهار النافذة
     modalOverlay.classList.add('show');
 }
 
-// إخفاء النافذة عند الضغط على زر "حسناً"
 if (modalCloseBtn) {
     modalCloseBtn.onclick = () => {
         modalOverlay.classList.remove('show');
@@ -64,21 +52,22 @@ initUser();
 // ================= LIVE DATA (GLOBAL) =================
 onSnapshot(userRef, (snap) => {
   if (!snap.exists()) return;
-  const data = snap.data();
-  updateElement("username", data.username);
-  updateElement("user-initial", data.username.charAt(0).toUpperCase());
-  updateElement("user-id-display", data.telegramId);
-  updateElement("balance", Number(data.usdt).toFixed(2));
-  updateElement("local-coin", Number(data.localCoin).toFixed(1));
-  updateElement("tasks-completed", data.tasksCompleted);
-  updateElement("referrals", data.referrals);
-  updateElement("level", `LV.${data.level}`);
-  updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
-  const progress = (data.usdt % 100);
+  currentUserData = snap.data(); // *** تخزين بيانات المستخدم عند كل تحديث ***
+  
+  updateElement("username", currentUserData.username);
+  updateElement("user-initial", currentUserData.username.charAt(0).toUpperCase());
+  updateElement("user-id-display", currentUserData.telegramId);
+  updateElement("balance", Number(currentUserData.usdt).toFixed(2));
+  updateElement("local-coin", Number(currentUserData.localCoin).toFixed(1));
+  updateElement("tasks-completed", currentUserData.tasksCompleted);
+  updateElement("referrals", currentUserData.referrals);
+  updateElement("level", `LV.${currentUserData.level}`);
+  updateElement("streak-info", `إجمالي ${currentUserData.streak || 0} يوم | تسلسل ${currentUserData.streak || 0} يوم`);
+  const progress = (currentUserData.usdt % 100);
   const levelProgressEl = document.getElementById("level-progress");
   if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
-  if (data.banned) { showModal("حسابك محظور", "error"); tg.close(); }
-  startCountdown(data.lastCheckin);
+  if (currentUserData.banned) { showModal("حسابك محظور", "error"); tg.close(); }
+  startCountdown(currentUserData.lastCheckin);
 });
 
 function updateElement(id, value) {
@@ -86,7 +75,7 @@ function updateElement(id, value) {
   if (el) el.innerText = value;
 }
 
-// ================= DAILY CHECK-IN (UPDATED) =================
+// ================= DAILY CHECK-IN =================
 const checkinBtn = document.getElementById("checkin-btn");
 const countdownEl = document.getElementById("countdown");
 let countdownInterval = null;
@@ -133,7 +122,7 @@ if (checkinBtn) {
   };
 }
 
-// ================= INVITE SYSTEM (UPDATED) =================
+// ================= INVITE SYSTEM =================
 function setupInviteButtons() {
     const createInviteHandler = (botUsername, userId) => {
         return () => {
@@ -143,8 +132,7 @@ function setupInviteButtons() {
             }
             const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
             hasSharedToday = true;
-            // ملاحظة: سنظهر النافذة المنبثقة أولاً، ثم نفتح رابط المشاركة
-            showModal("شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.", "success" );
+            showModal("شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.", "success"  );
             tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent("انضم إلى هذا البوت الرائع واحصل على مكافآت!")}`);
         };
     };
@@ -154,6 +142,66 @@ function setupInviteButtons() {
     inviteButtons.forEach(btn => { btn.onclick = inviteHandler; });
 }
 setupInviteButtons();
+
+// ================= WITHDRAWAL SYSTEM (جديد) =================
+const withdrawBtn = document.getElementById('withdraw-btn');
+const amountInput = document.getElementById('amount');
+const walletInput = document.getElementById('wallet');
+
+if (withdrawBtn) {
+    withdrawBtn.onclick = async () => {
+        const amount = parseFloat(amountInput.value);
+        const wallet = walletInput.value.trim();
+        const minWithdrawal = 10;
+
+        if (isNaN(amount) || amount <= 0) {
+            showModal("الرجاء إدخال مبلغ صحيح.", "warning");
+            return;
+        }
+        if (wallet === "") {
+            showModal("الرجاء إدخال عنوان المحفظة.", "warning");
+            return;
+        }
+        if (amount < minWithdrawal) {
+            showModal(`الحد الأدنى للسحب هو ${minWithdrawal} USDT.`, "warning");
+            return;
+        }
+        if (!currentUserData || currentUserData.usdt < amount) {
+            showModal("رصيدك الحالي غير كافٍ لإتمام عملية السحب.", "error");
+            return;
+        }
+
+        withdrawBtn.disabled = true;
+        withdrawBtn.innerText = "الرجاء الانتظار...";
+
+        try {
+            const withdrawalsCollection = collection(db, "withdrawals");
+            await addDoc(withdrawalsCollection, {
+                userId: userId,
+                username: currentUserData.username,
+                amount: amount,
+                wallet: wallet,
+                status: "pending",
+                createdAt: serverTimestamp()
+            });
+
+            await updateDoc(userRef, {
+                usdt: increment(-amount)
+            });
+
+            showModal("✅ تم إرسال طلب السحب بنجاح! ستتم معالجته خلال 24 ساعة.", "success");
+            amountInput.value = "";
+            walletInput.value = "";
+
+        } catch (error) {
+            console.error("Error processing withdrawal: ", error);
+            showModal("حدث خطأ أثناء إرسال الطلب. الرجاء المحاولة مرة أخرى.", "error");
+        } finally {
+            withdrawBtn.disabled = false;
+            withdrawBtn.innerText = "إرسال طلب السحب";
+        }
+    };
+}
 
 // ================= LEADERBOARD =================
 const leaderboardList = document.getElementById("leaderboard-list");
