@@ -13,7 +13,6 @@
         <i class="ri-wallet-3-line"></i>
         <h1>سحب الأرباح</h1>
     </div>
-
     <!-- Withdraw Form -->
     <div class="withdraw-form">
         <div class="form-group">
@@ -27,11 +26,7 @@
         </div>
         <button id="withdraw-btn" class="submit-btn">إرسال طلب السحب</button>
     </div>
-
   </div>
-
-  <!-- Custom Alert Toast -->
-  <div id="custom-toast" class="custom-toast"></div>
 
   <!-- Bottom Nav -->
   <nav>
@@ -41,6 +36,15 @@
     <a href="leaderboard.html"><i class="ri-trophy-line"></i><span>التصنيف</span></a>
     <a href="profile.html"><i class="ri-user-3-line"></i><span>الشخصي</span></a>
   </nav>
+
+  <!-- Custom Modal -->
+  <div id="custom-modal" class="modal-overlay">
+    <div class="modal-content">
+      <i id="modal-icon" class="ri-checkbox-circle-fill"></i>
+      <p id="modal-message">هذه هي رسالتك.</p>
+      <button id="modal-close-btn">حسناً</button>
+    </div>
+  </div>
 
   <script type="module" src="app.js"></script>
 </body>
