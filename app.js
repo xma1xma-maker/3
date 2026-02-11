@@ -16,40 +16,41 @@ const userId = tgUser ? String(tgUser.id) : "123456789_TEST";
 const userRef = doc(db, "users", userId);
 let hasSharedToday = false;
 
-// ================= CUSTOM ALERT FUNCTION (IMPROVED) =================
-const toastEl = document.getElementById('custom-toast');
-let toastTimeout;
+// ================= CUSTOM MODAL FUNCTION (NEW) =================
+const modalOverlay = document.getElementById('custom-modal');
+const modalContent = document.querySelector('.modal-content');
+const modalIcon = document.getElementById('modal-icon');
+const modalMessage = document.getElementById('modal-message');
+const modalCloseBtn = document.getElementById('modal-close-btn');
 
 /**
  * @param {string} message - The message to display.
- * @param {'success' | 'warning' | 'error'} type - The type of alert.
+ * @param {'success' | 'warning' | 'error'} type - The type of modal.
  */
-function showCustomAlert(message, type = 'success') {
-    if (!toastEl) return;
+function showModal(message, type = 'success') {
+    if (!modalOverlay) return;
 
-    clearTimeout(toastTimeout);
+    const icons = {
+        success: 'ri-checkbox-circle-fill',
+        warning: 'ri-error-warning-fill',
+        error: 'ri-close-circle-fill',
+    };
 
-    toastEl.classList.remove('show');
+    // تحديث المحتوى
+    modalContent.className = `modal-content ${type}`;
+    modalIcon.className = icons[type];
+    modalMessage.innerText = message;
 
-    setTimeout(() => {
-        const icons = {
-            success: 'ri-checkbox-circle-fill',
-            warning: 'ri-error-warning-fill',
-            error: 'ri-close-circle-fill',
-        };
-
-        toastEl.className = `custom-toast ${type}`;
-        toastEl.innerHTML = `<i class="${icons[type]}"></i> ${message}`;
-        
-        toastEl.classList.add('show');
-
-        // *** تم تغيير المدة هنا إلى 5 ثوانٍ ***
-        toastTimeout = setTimeout(() => {
-            toastEl.classList.remove('show');
-        }, 5000); // 5000 ميلي ثانية = 5 ثوانٍ
-    }, 100);
+    // إظهار النافذة
+    modalOverlay.classList.add('show');
 }
 
+// إخفاء النافذة عند الضغط على زر "حسناً"
+if (modalCloseBtn) {
+    modalCloseBtn.onclick = () => {
+        modalOverlay.classList.remove('show');
+    };
+}
 
 // ================= INIT USER =================
 async function initUser() {
@@ -76,7 +77,7 @@ onSnapshot(userRef, (snap) => {
   const progress = (data.usdt % 100);
   const levelProgressEl = document.getElementById("level-progress");
   if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
-  if (data.banned) { showCustomAlert("حسابك محظور", "error"); tg.close(); }
+  if (data.banned) { showModal("حسابك محظور", "error"); tg.close(); }
   startCountdown(data.lastCheckin);
 });
 
@@ -119,16 +120,16 @@ function startCountdown(lastCheckin) {
 if (checkinBtn) {
   checkinBtn.onclick = async () => {
     if (!canCheckin) {
-        showCustomAlert("لم تمر 24 ساعة بعد", "warning");
+        showModal("لم تمر 24 ساعة على آخر مكافأة.", "warning");
         return;
     }
     if (!hasSharedToday) {
-        showCustomAlert("شارك أولاً للحصول على المكافأة", "warning");
+        showModal("يجب عليك مشاركة رابط الدعوة أولاً للحصول على المكافأة اليومية.", "warning");
         return;
     }
     await updateDoc(userRef, { usdt: increment(0.1), lastCheckin: new Date(), streak: increment(1) });
     hasSharedToday = false;
-    showCustomAlert("🎉 حصلت على 0.1 USDT", "success");
+    showModal("🎉 رائع! لقد حصلت على 0.1 USDT كمكافأة تسجيل حضور!", "success");
   };
 }
 
@@ -137,12 +138,13 @@ function setupInviteButtons() {
     const createInviteHandler = (botUsername, userId) => {
         return () => {
             if (!tgUser) {
-                showCustomAlert("افتح التطبيق من تيليجرام", "error");
+                showModal("يجب فتح التطبيق من داخل تيليجرام لاستخدام هذه الميزة.", "error");
                 return;
             }
             const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
             hasSharedToday = true;
-            showCustomAlert("شكراً لمشاركتك! خذ مكافأتك الآن", "success" );
+            // ملاحظة: سنظهر النافذة المنبثقة أولاً، ثم نفتح رابط المشاركة
+            showModal("شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.", "success" );
             tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent("انضم إلى هذا البوت الرائع واحصل على مكافآت!")}`);
         };
     };
