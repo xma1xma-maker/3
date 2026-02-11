@@ -6,7 +6,6 @@ tg.expand();
 const tgUser = tg.initDataUnsafe?.user;
 
 if (!tgUser) {
-  // استخدم هذا التنبيه لتجربة التطبيق في المتصفح العادي
   // alert("❌ افتح التطبيق من داخل Telegram فقط");
 }
 
@@ -40,9 +39,11 @@ const app = initializeApp(firebaseConfig );
 const db = getFirestore(app);
 
 // ================= USER =================
-// استخدم ID حقيقي من تيليجرام أو ID وهمي للتجربة في المتصفح
 const userId = tgUser ? String(tgUser.id) : "123456789_TEST";
 const userRef = doc(db, "users", userId);
+
+// *** متغير جديد لتتبع المشاركة اليومية ***
+let hasSharedToday = false;
 
 // ================= INIT USER =================
 async function initUser() {
@@ -52,16 +53,15 @@ async function initUser() {
       telegramId: userId,
       username: tgUser?.username || tgUser?.first_name || "Test User",
       usdt: 0,
-      localCoin: 0, // عملة داخلية جديدة
+      localCoin: 0,
       level: 1,
-      tasksCompleted: 0, // مهام مكتملة
+      tasksCompleted: 0,
       referrals: 0,
       banned: false,
       lastCheckin: null,
       streak: 0,
       createdAt: new Date()
     });
-    console.log("✅ User created");
   }
 }
 initUser();
@@ -71,16 +71,13 @@ onSnapshot(userRef, (snap) => {
   if (!snap.exists()) return;
   const data = snap.data();
 
-  // تحديث كل العناصر التي تحمل ID مطابق
   updateElement("username", data.username);
   updateElement("user-initial", data.username.charAt(0).toUpperCase());
   updateElement("user-id-display", data.telegramId);
-  
   updateElement("balance", Number(data.usdt).toFixed(2));
   updateElement("local-coin", Number(data.localCoin).toFixed(1));
   updateElement("tasks-completed", data.tasksCompleted);
   updateElement("referrals", data.referrals);
-  
   updateElement("level", `LV.${data.level}`);
   updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
 
@@ -101,10 +98,11 @@ function updateElement(id, value) {
   if (el) el.innerText = value;
 }
 
-// ================= DAILY CHECK-IN =================
+// ================= DAILY CHECK-IN (UPDATED) =================
 const checkinBtn = document.getElementById("checkin-btn");
 const countdownEl = document.getElementById("countdown");
 let countdownInterval = null;
+let canCheckin = false; // متغير لتحديد هل مرت 24 ساعة
 
 function startCountdown(lastCheckin) {
   if (!countdownEl || !checkinBtn) return;
@@ -117,12 +115,14 @@ function startCountdown(lastCheckin) {
     const diff = nextTime - now;
 
     if (diff <= 0) {
+      canCheckin = true; // مرت 24 ساعة، يمكنه التسجيل
       countdownEl.innerText = "تسجيل الحضور";
       checkinBtn.disabled = false;
       clearInterval(countdownInterval);
       return;
     }
     
+    canCheckin = false; // لم تمر 24 ساعة بعد
     checkinBtn.disabled = true;
     const h = Math.floor(diff / 1000 / 60 / 60);
     const m = Math.floor((diff / 1000 / 60) % 60);
@@ -136,11 +136,24 @@ function startCountdown(lastCheckin) {
 
 if (checkinBtn) {
   checkinBtn.onclick = async () => {
+    // التحقق من الشرطين: هل مرت 24 ساعة؟ وهل قام بالمشاركة اليوم؟
+    if (!canCheckin) {
+        tg.showAlert("⏳ لم تمر 24 ساعة على آخر مكافأة.");
+        return;
+    }
+    if (!hasSharedToday) {
+        tg.showAlert("❗️يجب عليك مشاركة رابط الدعوة أولاً للحصول على المكافأة اليومية.");
+        return;
+    }
+
+    // إذا تحققت الشروط، امنح المكافأة
     await updateDoc(userRef, {
       usdt: increment(0.1),
       lastCheckin: new Date(),
       streak: increment(1)
     });
+    
+    hasSharedToday = false; // إعادة تعيين متغير المشاركة لليوم التالي
     tg.showPopup({ title: "✅ تم", message: "لقد حصلت على 0.1 USDT كمكافأة تسجيل حضور!", buttons: [{ type: "ok" }] });
   };
 }
@@ -154,46 +167,35 @@ function setupInviteButtons() {
                 return;
             }
             const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
-            tg.showPopup({
-                title: "رابط الدعوة الخاص بك",
-                message: `شارك هذا الرابط مع أصدقائك:\n\n${inviteLink}`,
-                buttons: [{ id: 'copy', type: 'default', text: 'نسخ الرابط' }, { type: 'close' }]
-            } );
+            
+            // *** عند فتح نافذة المشاركة، نعتبر أنه قام بالمشاركة ***
+            hasSharedToday = true;
+            tg.showAlert('✅ شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.' );
+
+            // فتح نافذة المشاركة الفعلية
+            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent("انضم إلى هذا البوت الرائع واحصل على مكافآت!")}`);
         };
     };
 
-    const botUsername = "gdkmgkdbot"; // تأكد من صحة اسم البوت
+    const botUsername = "gdkmgkdbot";
     const inviteHandler = createInviteHandler(botUsername, userId);
 
     const inviteButtons = document.querySelectorAll(".invite-btn");
     inviteButtons.forEach(btn => {
         btn.onclick = inviteHandler;
     });
-
-    tg.onEvent('popupClosed', (data) => {
-        if (data.button_id === 'copy') {
-            const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
-            navigator.clipboard.writeText(inviteLink ).then(() => {
-                tg.showAlert('✅ تم النسخ بنجاح!');
-            }).catch(err => {
-                tg.showAlert('❌ فشل النسخ');
-            });
-        }
-    });
 }
 setupInviteButtons();
 
 
 // ================= LEADERBOARD =================
+// (هذا الجزء يبقى كما هو بدون تغيير)
 const leaderboardList = document.getElementById("leaderboard-list");
-
 async function fetchLeaderboard() {
     if (!leaderboardList) return;
-
     const usersCollection = collection(db, "users");
     const q = query(usersCollection, orderBy("usdt", "desc"), limit(20));
     const querySnapshot = await getDocs(q);
-
     leaderboardList.innerHTML = "";
     let rank = 1;
     querySnapshot.forEach((docSnap) => {
@@ -217,7 +219,6 @@ async function fetchLeaderboard() {
     });
 }
 fetchLeaderboard();
-
 function stringToColor(str) {
   if (!str) return '#8b949e';
   let hash = 0;
