@@ -421,48 +421,6 @@ nav a.active {
     font-size: 18px;
 }
 
-/* ================= CUSTOM TOAST ALERT ================= */
-.custom-toast {
-  position: fixed;
-  bottom: 100px;
-  left: 50%;
-  transform: translate(-50%, 200%);
-  padding: 15px 25px;
-  border-radius: 14px;
-  background: #161b22;
-  border: 1px solid #30363d;
-  color: #e6edf3;
-  font-weight: 500;
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  z-index: 1000;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  white-space: nowrap;
-}
-
-.custom-toast.show {
-  transform: translate(-50%, 0);
-}
-
-.custom-toast i {
-  font-size: 22px;
-}
-
-.custom-toast.success i {
-  color: #23d18b;
-}
-
-.custom-toast.warning i {
-  color: #f7b731;
-}
-
-.custom-toast.error i {
-  color: #f44336;
-}
-
 /* ================= WITHDRAW PAGE ================= */
 .withdraw-form {
   margin-top: 30px;
@@ -520,3 +478,77 @@ nav a.active {
 .submit-btn:active {
   transform: scale(0.98);
 }
+
+/* ================= CUSTOM MODAL ================= */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-content {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 20px;
+  padding: 30px;
+  width: 85%;
+  max-width: 320px;
+  text-align: center;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  transform: scale(0.9);
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.modal-overlay.show .modal-content {
+  transform: scale(1);
+}
+
+.modal-content i {
+  font-size: 50px;
+  margin-bottom: 15px;
+}
+
+.modal-content p {
+  font-size: 16px;
+  font-weight: 500;
+  color: #e6edf3;
+  margin: 0 0 25px 0;
+  line-height: 1.6;
+}
+
+#modal-close-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+/* أنماط مختلفة للنافذة */
+.modal-content.success i { color: #23d18b; }
+.modal-content.success #modal-close-btn { background-color: #23d18b; color: #fff; }
+
+.modal-content.warning i { color: #f7b731; }
+.modal-content.warning #modal-close-btn { background-color: #f7b731; color: #161b22; }
+
+.modal-content.error i { color: #f44336; }
+.modal-content.error #modal-close-btn { background-color: #f44336; color: #fff; }
