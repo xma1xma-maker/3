@@ -1,14 +1,10 @@
 // ================= TELEGRAM =================
 const tg = window.Telegram.WebApp;
 
-// 🔴 مهم جدًا
 tg.ready();
 tg.expand();
 
 const tgUser = tg.initDataUnsafe?.user;
-
-console.log("Telegram initData:", tg.initDataUnsafe);
-console.log("Telegram user:", tgUser);
 
 if (!tgUser) {
   alert("❌ افتح التطبيق من داخل Telegram فقط");
@@ -22,11 +18,13 @@ import {
   doc,
   getDoc,
   setDoc,
-  onSnapshot
+  updateDoc,
+  onSnapshot,
+  increment
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ",
+  apiKey: "YOUR_KEY",
   authDomain: "tele-follow.firebaseapp.com",
   projectId: "tele-follow",
   storageBucket: "tele-follow.firebasestorage.app",
@@ -38,7 +36,7 @@ const firebaseApp = initializeApp(firebaseConfig);
 const db = getFirestore(firebaseApp);
 
 // ================= USER =================
-const userId = String(tgUser.id); // 🔥 Document ID = telegramId
+const userId = String(tgUser.id);
 const userRef = doc(db, "users", userId);
 
 // ================= INIT USER =================
@@ -53,12 +51,11 @@ async function initUser() {
       level: 1,
       referrals: 0,
       banned: false,
+      lastCheckin: null,
       createdAt: new Date()
     });
 
     console.log("✅ User created:", userId);
-  } else {
-    console.log("ℹ️ User already exists:", userId);
   }
 }
 
@@ -73,17 +70,17 @@ onSnapshot(userRef, (snap) => {
   // الرصيد
   const balanceEl = document.getElementById("balance");
   if (balanceEl) {
-    balanceEl.innerHTML = `${data.usdt.toFixed(2)} <small>USDT</small>`;
+    balanceEl.innerHTML = `${Number(data.usdt).toFixed(2)} <small>USDT</small>`;
   }
 
   // المستوى
-  const levelEl = document.querySelector(".level");
+  const levelEl = document.getElementById("level");
   if (levelEl) {
     levelEl.innerText = "LV " + data.level;
   }
 
-  // الإحالات (أول stat)
-  const referralsEl = document.querySelector(".stat b");
+  // الإحالات
+  const referralsEl = document.getElementById("referrals");
   if (referralsEl) {
     referralsEl.innerText = data.referrals;
   }
@@ -95,8 +92,50 @@ onSnapshot(userRef, (snap) => {
   }
 });
 
-// ================= BUTTONS =================
+// ================= DAILY CHECK-IN =================
+const checkinBtn = document.querySelector(".checkin");
+
+if (checkinBtn) {
+  checkinBtn.onclick = async () => {
+
+    const snap = await getDoc(userRef);
+    const data = snap.data();
+
+    const today = new Date().toDateString();
+
+    if (data.lastCheckin === today) {
+      alert("⏳ سجلت حضورك اليوم بالفعل");
+      return;
+    }
+
+    await updateDoc(userRef, {
+      usdt: increment(0.10), // مكافأة يومية
+      lastCheckin: today
+    });
+
+    alert("🎉 تم إضافة 0.10 USDT");
+  };
+}
+
+// ================= INVITE SYSTEM =================
+const inviteBtn = document.querySelector(".invite");
+
+if (inviteBtn) {
+  inviteBtn.onclick = () => {
+    const botUsername = "@gdkmgkdbot";
+    const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
+
+    tg.showPopup({
+      title: "رابط الدعوة",
+      message: inviteLink,
+      buttons: [{ type: "close" }]
+    });
+  };
+}
+
+// ================= WITHDRAW BUTTON =================
 const withdrawBtn = document.querySelector(".primary");
+
 if (withdrawBtn) {
   withdrawBtn.onclick = () => {
     window.location.href = "withdraw.html";
