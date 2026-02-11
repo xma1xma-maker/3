@@ -462,3 +462,61 @@ nav a.active {
 .custom-toast.error i {
   color: #f44336;
 }
+
+/* ================= WITHDRAW PAGE ================= */
+.withdraw-form {
+  margin-top: 30px;
+}
+
+.form-group {
+  margin-bottom: 25px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #8b949e;
+  margin-bottom: 8px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 14px 16px;
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  color: #e6edf3;
+  font-size: 16px;
+  font-family: 'Tajawal', sans-serif;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #f7931a;
+  box-shadow: 0 0 0 3px rgba(247, 157, 26, 0.2);
+}
+
+.form-group small {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, #f7931a, #ffae42);
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.submit-btn:active {
+  transform: scale(0.98);
+}
