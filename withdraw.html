@@ -1,28 +1,47 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>Withdraw</title>
+  <title>سحب الأرباح</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
 <body>
+  <div class="container">
+    <div class="page-header">
+        <i class="ri-wallet-3-line"></i>
+        <h1>سحب الأرباح</h1>
+    </div>
 
-<div class="app">
-  <h2>سحب USDT</h2>
+    <!-- Withdraw Form -->
+    <div class="withdraw-form">
+        <div class="form-group">
+            <label for="amount">المبلغ (USDT )</label>
+            <input type="number" id="amount" placeholder="أدخل المبلغ">
+            <small>الحد الأدنى للسحب: 10 USDT</small>
+        </div>
+        <div class="form-group">
+            <label for="wallet">عنوان محفظة TRC20</label>
+            <input type="text" id="wallet" placeholder="أدخل عنوان محفظتك هنا">
+        </div>
+        <button id="withdraw-btn" class="submit-btn">إرسال طلب السحب</button>
+    </div>
 
-  <input placeholder="المبلغ" />
-  <br><br>
-  <input placeholder="محفظة TRC20" />
-  <br><br>
-  <button>طلب سحب</button>
-</div>
+  </div>
 
-<nav>
-  <a href="index.html">🏠</a>
-  <a href="tasks.html">📋</a>
-  <a href="withdraw.html">💸</a>
-  <a href="profile.html">👤</a>
-</nav>
+  <!-- Custom Alert Toast -->
+  <div id="custom-toast" class="custom-toast"></div>
 
+  <!-- Bottom Nav -->
+  <nav>
+    <!-- لا يوجد زر نشط هنا، يمكن إضافته لاحقاً إذا أردنا صفحة للسحب في شريط التنقل -->
+    <a href="index.html"><i class="ri-home-5-line"></i><span>الرئيسية</span></a>
+    <a href="tasks.html"><i class="ri-task-line"></i><span>المهام</span></a>
+    <a href="leaderboard.html"><i class="ri-trophy-line"></i><span>التصنيف</span></a>
+    <a href="profile.html"><i class="ri-user-3-line"></i><span>الشخصي</span></a>
+  </nav>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>
