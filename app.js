@@ -29,7 +29,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_KEY", // استبدل بمفتاحك
+  apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", // استبدل بمفتاحك
   authDomain: "tele-follow.firebaseapp.com",
   projectId: "tele-follow",
   storageBucket: "tele-follow.firebasestorage.app",
