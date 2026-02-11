@@ -27,13 +27,10 @@ let toastTimeout;
 function showCustomAlert(message, type = 'success') {
     if (!toastEl) return;
 
-    // مسح أي مؤقت سابق لضمان عدم التداخل
     clearTimeout(toastTimeout);
 
-    // 1. إخفاء التنبيه القديم فوراً (إذا كان ظاهراً) لإعادة ضبط الحركة
     toastEl.classList.remove('show');
 
-    // 2. الانتظار للحظة قصيرة جداً للسماح للمتصفح بتطبيق الإخفاء
     setTimeout(() => {
         const icons = {
             success: 'ri-checkbox-circle-fill',
@@ -41,18 +38,16 @@ function showCustomAlert(message, type = 'success') {
             error: 'ri-close-circle-fill',
         };
 
-        // 3. تحديث المحتوى والنوع
         toastEl.className = `custom-toast ${type}`;
         toastEl.innerHTML = `<i class="${icons[type]}"></i> ${message}`;
         
-        // 4. إظهار التنبيه الجديد بالحركة
         toastEl.classList.add('show');
 
-        // 5. جدولة الإخفاء التلقائي
+        // *** تم تغيير المدة هنا إلى 5 ثوانٍ ***
         toastTimeout = setTimeout(() => {
             toastEl.classList.remove('show');
-        }, 3000);
-    }, 100); // تأخير بسيط (100 ميلي ثانية) لإعادة ضبط الحركة
+        }, 5000); // 5000 ميلي ثانية = 5 ثوانٍ
+    }, 100);
 }
 
 
