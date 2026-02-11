@@ -61,12 +61,14 @@ async function initUser() {
 initUser();
 
 // ================= LIVE DATA =================
+let countdownInterval = null;
+
 onSnapshot(userRef, (snap) => {
   if (!snap.exists()) return;
 
   const data = snap.data();
 
-  // الرصيد + أنيميشن
+  // الرصيد
   const balanceEl = document.getElementById("balance");
   if (balanceEl) {
     balanceEl.innerHTML = `${Number(data.usdt).toFixed(2)} <small>USDT</small>`;
@@ -87,29 +89,43 @@ onSnapshot(userRef, (snap) => {
     alert("🚫 حسابك محظور");
     tg.close();
   }
+
+  // تشغيل العداد بناءً على آخر تسجيل
+  startCountdown(data.lastCheckin);
 });
 
-// ================= DAILY CHECK-IN PRO =================
+// ================= DAILY CHECK-IN 24H SYSTEM =================
 
 const checkinBtn = document.querySelector(".checkin");
 const countdownEl = document.getElementById("countdown");
 
-function getTomorrowMidnight() {
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
-  return tomorrow;
-}
+function startCountdown(lastCheckin) {
 
-function startCountdown() {
   if (!countdownEl) return;
 
-  setInterval(() => {
-    const diff = getTomorrowMidnight() - new Date();
+  // إيقاف أي عداد سابق
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+
+  if (!lastCheckin) {
+    countdownEl.innerText = "🔥 يمكنك التسجيل الآن";
+    return;
+  }
+
+  const lastDate = new Date(lastCheckin);
+  const nextTime = new Date(lastDate.getTime() + 24 * 60 * 60 * 1000);
+
+  function updateTimer() {
+
+    const now = new Date();
+    const diff = nextTime - now;
 
     if (diff <= 0) {
       countdownEl.innerText = "🔥 يمكنك التسجيل الآن";
+      clearInterval(countdownInterval);
+      countdownInterval = null;
       return;
     }
 
@@ -117,11 +133,14 @@ function startCountdown() {
     const m = Math.floor((diff / 1000 / 60) % 60);
     const s = Math.floor((diff / 1000) % 60);
 
-    countdownEl.innerText = `المتبقي: ${h}h ${m}m ${s}s`;
-  }, 1000);
+    countdownEl.innerText = `⏳ المتبقي ${h}h ${m}m ${s}s`;
+  }
+
+  updateTimer();
+  countdownInterval = setInterval(updateTimer, 1000);
 }
 
-startCountdown();
+// ================= CHECK-IN BUTTON =================
 
 if (checkinBtn) {
   checkinBtn.onclick = async () => {
@@ -129,42 +148,45 @@ if (checkinBtn) {
     const snap = await getDoc(userRef);
     const data = snap.data();
 
-    const today = new Date().toDateString();
-    const last = data.lastCheckin;
+    const now = new Date();
+    const last = data.lastCheckin ? new Date(data.lastCheckin) : null;
 
-    if (last === today) {
-      alert("⏳ سجلت حضورك اليوم بالفعل");
-      return;
+    // تحقق 24 ساعة
+    if (last) {
+      const diff = now - last;
+      if (diff < 24 * 60 * 60 * 1000) {
+        alert("⏳ لم تمر 24 ساعة بعد");
+        return;
+      }
     }
 
-    let newStreak = data.streak || 0;
+    let newStreak = 1;
 
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
+    if (last) {
+      const diffDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
 
-    if (last === yesterday.toDateString()) {
-      newStreak += 1;
-    } else {
-      newStreak = 1;
+      if (diffDays === 1) {
+        newStreak = (data.streak || 0) + 1;
+      }
     }
 
-    // المكافأة تزيد حسب الأيام
     let reward = 0.10 * newStreak;
 
     // بونس 5 أيام
     if (newStreak === 5) {
-      reward += 1; // بونس إضافي
+      reward += 1;
       newStreak = 0;
+
       tg.showPopup({
         title: "🔥 BONUS",
-        message: "حصلت على مكافأة 5 أيام متتالية +1 USDT",
+        message: "مكافأة 5 أيام متتالية +1 USDT",
         buttons: [{ type: "ok" }]
       });
     }
 
     await updateDoc(userRef, {
       usdt: increment(reward),
-      lastCheckin: today,
+      lastCheckin: now,
       streak: newStreak
     });
 
@@ -190,6 +212,7 @@ if (inviteBtn) {
 }
 
 // ================= WITHDRAW =================
+
 const withdrawBtn = document.querySelector(".primary");
 
 if (withdrawBtn) {
