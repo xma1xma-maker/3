@@ -32,8 +32,8 @@ const firebaseConfig = {
   appId: "1:311701431089:web:fcba431dcae893a87cc610"
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getFirestore(firebaseApp);
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 // ================= USER =================
 const userId = String(tgUser.id);
@@ -52,13 +52,12 @@ async function initUser() {
       referrals: 0,
       banned: false,
       lastCheckin: null,
+      streak: 0,
       createdAt: new Date()
     });
-
-    console.log("✅ User created:", userId);
+    console.log("✅ User created");
   }
 }
-
 initUser();
 
 // ================= LIVE DATA =================
@@ -67,23 +66,21 @@ onSnapshot(userRef, (snap) => {
 
   const data = snap.data();
 
-  // الرصيد
+  // الرصيد + أنيميشن
   const balanceEl = document.getElementById("balance");
   if (balanceEl) {
     balanceEl.innerHTML = `${Number(data.usdt).toFixed(2)} <small>USDT</small>`;
+    balanceEl.style.transform = "scale(1.1)";
+    setTimeout(() => balanceEl.style.transform = "scale(1)", 300);
   }
 
   // المستوى
   const levelEl = document.getElementById("level");
-  if (levelEl) {
-    levelEl.innerText = "LV " + data.level;
-  }
+  if (levelEl) levelEl.innerText = "LV " + data.level;
 
   // الإحالات
   const referralsEl = document.getElementById("referrals");
-  if (referralsEl) {
-    referralsEl.innerText = data.referrals;
-  }
+  if (referralsEl) referralsEl.innerText = data.referrals;
 
   // حظر
   if (data.banned) {
@@ -92,8 +89,39 @@ onSnapshot(userRef, (snap) => {
   }
 });
 
-// ================= DAILY CHECK-IN =================
+// ================= DAILY CHECK-IN PRO =================
+
 const checkinBtn = document.querySelector(".checkin");
+const countdownEl = document.getElementById("countdown");
+
+function getTomorrowMidnight() {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  return tomorrow;
+}
+
+function startCountdown() {
+  if (!countdownEl) return;
+
+  setInterval(() => {
+    const diff = getTomorrowMidnight() - new Date();
+
+    if (diff <= 0) {
+      countdownEl.innerText = "🔥 يمكنك التسجيل الآن";
+      return;
+    }
+
+    const h = Math.floor(diff / 1000 / 60 / 60);
+    const m = Math.floor((diff / 1000 / 60) % 60);
+    const s = Math.floor((diff / 1000) % 60);
+
+    countdownEl.innerText = `المتبقي: ${h}h ${m}m ${s}s`;
+  }, 1000);
+}
+
+startCountdown();
 
 if (checkinBtn) {
   checkinBtn.onclick = async () => {
@@ -102,27 +130,55 @@ if (checkinBtn) {
     const data = snap.data();
 
     const today = new Date().toDateString();
+    const last = data.lastCheckin;
 
-    if (data.lastCheckin === today) {
+    if (last === today) {
       alert("⏳ سجلت حضورك اليوم بالفعل");
       return;
     }
 
+    let newStreak = data.streak || 0;
+
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (last === yesterday.toDateString()) {
+      newStreak += 1;
+    } else {
+      newStreak = 1;
+    }
+
+    // المكافأة تزيد حسب الأيام
+    let reward = 0.10 * newStreak;
+
+    // بونس 5 أيام
+    if (newStreak === 5) {
+      reward += 1; // بونس إضافي
+      newStreak = 0;
+      tg.showPopup({
+        title: "🔥 BONUS",
+        message: "حصلت على مكافأة 5 أيام متتالية +1 USDT",
+        buttons: [{ type: "ok" }]
+      });
+    }
+
     await updateDoc(userRef, {
-      usdt: increment(0.10), // مكافأة يومية
-      lastCheckin: today
+      usdt: increment(reward),
+      lastCheckin: today,
+      streak: newStreak
     });
 
-    alert("🎉 تم إضافة 0.10 USDT");
+    alert(`🎉 تم إضافة ${reward.toFixed(2)} USDT`);
   };
 }
 
 // ================= INVITE SYSTEM =================
+
 const inviteBtn = document.querySelector(".invite");
 
 if (inviteBtn) {
   inviteBtn.onclick = () => {
-    const botUsername = "@gdkmgkdbot";
+    const botUsername = "gdkmgkdbot";
     const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
 
     tg.showPopup({
@@ -133,7 +189,7 @@ if (inviteBtn) {
   };
 }
 
-// ================= WITHDRAW BUTTON =================
+// ================= WITHDRAW =================
 const withdrawBtn = document.querySelector(".primary");
 
 if (withdrawBtn) {
