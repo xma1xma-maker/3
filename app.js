@@ -8,7 +8,6 @@ const tgUser = tg.initDataUnsafe?.user;
 if (!tgUser) {
   // استخدم هذا التنبيه لتجربة التطبيق في المتصفح العادي
   // alert("❌ افتح التطبيق من داخل Telegram فقط");
-  // throw new Error("Telegram user not found");
 }
 
 // ================= FIREBASE =================
@@ -29,7 +28,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", // استبدل بمفتاحك
+  apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ",
   authDomain: "tele-follow.firebaseapp.com",
   projectId: "tele-follow",
   storageBucket: "tele-follow.firebasestorage.app",
@@ -85,22 +84,18 @@ onSnapshot(userRef, (snap) => {
   updateElement("level", `LV.${data.level}`);
   updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
 
-  // تحديث شريط التقدم (مثال: كل 100 USDT تزيد مستوى)
-  const progress = (data.usdt % 100) / 100 * 100;
+  const progress = (data.usdt % 100);
   const levelProgressEl = document.getElementById("level-progress");
   if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
 
-  // حظر
   if (data.banned) {
     alert("🚫 حسابك محظور");
     tg.close();
   }
 
-  // تحديث عداد الحضور اليومي
   startCountdown(data.lastCheckin);
 });
 
-// Helper function to update elements safely
 function updateElement(id, value) {
   const el = document.getElementById(id);
   if (el) el.innerText = value;
@@ -141,9 +136,6 @@ function startCountdown(lastCheckin) {
 
 if (checkinBtn) {
   checkinBtn.onclick = async () => {
-    // (نفس كود تسجيل الحضور السابق مع تعديلات بسيطة)
-    // ... يمكنك نسخ ولصق الكود من ملفك القديم هنا
-    // للتسهيل، سأضع نسخة مبسطة
     await updateDoc(userRef, {
       usdt: increment(0.1),
       lastCheckin: new Date(),
@@ -153,36 +145,56 @@ if (checkinBtn) {
   };
 }
 
-// ================= INVITE SYSTEM =================
-function setupInviteButton(selector) {
-    const inviteBtn = document.querySelector(selector);
-    if (inviteBtn) {
-        inviteBtn.onclick = () => {
-            const botUsername = "gdkmgkdbot"; // غيره لاسم بوتك
+// ================= INVITE SYSTEM (UPDATED) =================
+function setupInviteButtons() {
+    const createInviteHandler = (botUsername, userId) => {
+        return () => {
+            if (!tgUser) {
+                alert("يجب فتح التطبيق من داخل تيليجرام لاستخدام هذه الميزة.");
+                return;
+            }
             const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
             tg.showPopup({
                 title: "رابط الدعوة الخاص بك",
-                message: inviteLink,
-                buttons: [{ type: "close" }]
+                message: `شارك هذا الرابط مع أصدقائك:\n\n${inviteLink}`,
+                buttons: [{ id: 'copy', type: 'default', text: 'نسخ الرابط' }, { type: 'close' }]
             } );
         };
-    }
+    };
+
+    const botUsername = "gdkmgkdbot"; // تأكد من صحة اسم البوت
+    const inviteHandler = createInviteHandler(botUsername, userId);
+
+    const inviteButtons = document.querySelectorAll(".invite-btn");
+    inviteButtons.forEach(btn => {
+        btn.onclick = inviteHandler;
+    });
+
+    tg.onEvent('popupClosed', (data) => {
+        if (data.button_id === 'copy') {
+            const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
+            navigator.clipboard.writeText(inviteLink ).then(() => {
+                tg.showAlert('✅ تم النسخ بنجاح!');
+            }).catch(err => {
+                tg.showAlert('❌ فشل النسخ');
+            });
+        }
+    });
 }
-// تفعيل زر الدعوة في صفحة الملف الشخصي
-setupInviteButton(".profile-actions .invite-btn");
+setupInviteButtons();
 
 
 // ================= LEADERBOARD =================
 const leaderboardList = document.getElementById("leaderboard-list");
 
 async function fetchLeaderboard() {
-    if (!leaderboardList) return; // لا تنفذ الكود إلا في صفحة التصنيف
+    if (!leaderboardList) return;
 
     const usersCollection = collection(db, "users");
     const q = query(usersCollection, orderBy("usdt", "desc"), limit(20));
     const querySnapshot = await getDocs(q);
 
-    leaderboardList.innerHTML = ""; // مسح القائمة القديمة
+    leaderboardList.innerHTML = "";
     let rank = 1;
     querySnapshot.forEach((docSnap) => {
         const userData = docSnap.data();
@@ -204,12 +216,10 @@ async function fetchLeaderboard() {
         rank++;
     });
 }
-
-// استدعاء دالة جلب قائمة المتصدرين
 fetchLeaderboard();
 
-// دالة مساعدة لتوليد لون فريد من اسم المستخدم
 function stringToColor(str) {
+  if (!str) return '#8b949e';
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
