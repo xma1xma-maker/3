@@ -6,16 +6,15 @@ const tgUser = tg.initDataUnsafe?.user;
 
 // ================= FIREBASE =================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-// *** تم إضافة خدمات المصادقة ***
 import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
 const app = initializeApp(firebaseConfig );
 const db = getFirestore(app);
-const auth = getAuth(app); // *** الحصول على خدمة المصادقة ***
+const auth = getAuth(app);
 
-// ================= USER & APP STATE (سيتم تعريفها لاحقاً) =================
+// ================= USER & APP STATE =================
 let userId = null;
 let userRef = null;
 let hasSharedToday = false;
@@ -43,22 +42,19 @@ if (modalCloseBtn) {
     };
 }
 
-// ================= APP INITIALIZATION (نقطة البداية الجديدة) =================
+// ================= APP INITIALIZATION =================
 async function startApp() {
     try {
-        // 1. تسجيل الدخول بشكل مجهول للحصول على UID
         const userCredential = await signInAnonymously(auth);
         const user = userCredential.user;
-        
-        // 2. استخدام UID الموثق كمعرف أساسي للمستخدم
         userId = user.uid;
         userRef = doc(db, "users", userId);
 
-        // 3. تشغيل باقي وظائف التطبيق بعد نجاح المصادقة
         await initUser();
         setupLiveListeners();
         setupInviteButtons();
         setupWithdrawalSystem();
+        setupNavigation(); // استدعاء دالة التنقل
         fetchLeaderboard();
 
     } catch (error) {
@@ -66,14 +62,14 @@ async function startApp() {
         showModal("حدث خطأ في الاتصال بالخادم. الرجاء إعادة تحميل الصفحة.", "error");
     }
 }
-startApp(); // بدء تشغيل التطبيق
+startApp();
 
 // ================= INIT USER =================
 async function initUser() {
   const snap = await getDoc(userRef);
   if (!snap.exists()) {
     await setDoc(userRef, {
-        authUid: userId, // حفظ UID الموثق
+        authUid: userId,
         telegramId: tgUser ? String(tgUser.id) : "TEST_USER",
         username: tgUser?.username || tgUser?.first_name || "Test User",
         usdt: 0, localCoin: 0, level: 1, tasksCompleted: 0, referrals: 0,
@@ -156,7 +152,6 @@ function setupInviteButtons() {
     const createInviteHandler = (botUsername) => {
         return () => {
             if (!tgUser) { showModal("يجب فتح التطبيق من داخل تيليجرام.", "error"); return; }
-            // نستخدم UID الموثق في رابط الدعوة
             const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
             hasSharedToday = true;
             showModal("شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.", "success"  );
@@ -167,6 +162,16 @@ function setupInviteButtons() {
     const inviteHandler = createInviteHandler(botUsername);
     const inviteButtons = document.querySelectorAll(".invite-btn");
     inviteButtons.forEach(btn => { btn.onclick = inviteHandler; });
+}
+
+// ================= NAVIGATION HELPERS =================
+function setupNavigation() {
+    const goToWithdrawBtn = document.getElementById('go-to-withdraw-btn');
+    if (goToWithdrawBtn) {
+        goToWithdrawBtn.onclick = () => {
+            window.location.href = 'withdraw.html';
+        };
+    }
 }
 
 // ================= WITHDRAWAL SYSTEM =================
@@ -192,7 +197,7 @@ function setupWithdrawalSystem() {
             try {
                 const withdrawalsCollection = collection(db, "withdrawals");
                 await addDoc(withdrawalsCollection, {
-                    userId: userId, // UID الموثق
+                    userId: userId,
                     username: currentUserData.username,
                     amount: amount,
                     wallet: wallet,
