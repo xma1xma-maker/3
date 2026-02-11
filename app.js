@@ -5,18 +5,21 @@ tg.expand();
 const tgUser = tg.initDataUnsafe?.user;
 
 // ================= FIREBASE =================
-// *** تم إضافة addDoc و serverTimestamp ***
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+// *** تم إضافة خدمات المصادقة ***
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
 const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
 const app = initializeApp(firebaseConfig );
 const db = getFirestore(app);
+const auth = getAuth(app); // *** الحصول على خدمة المصادقة ***
 
-// ================= USER & APP STATE =================
-const userId = tgUser ? String(tgUser.id) : "123456789_TEST";
-const userRef = doc(db, "users", userId);
+// ================= USER & APP STATE (سيتم تعريفها لاحقاً) =================
+let userId = null;
+let userRef = null;
 let hasSharedToday = false;
-let currentUserData = null; // *** متغير جديد لتخزين بيانات المستخدم ***
+let currentUserData = null;
 
 // ================= CUSTOM MODAL FUNCTION =================
 const modalOverlay = document.getElementById('custom-modal');
@@ -40,35 +43,67 @@ if (modalCloseBtn) {
     };
 }
 
+// ================= APP INITIALIZATION (نقطة البداية الجديدة) =================
+async function startApp() {
+    try {
+        // 1. تسجيل الدخول بشكل مجهول للحصول على UID
+        const userCredential = await signInAnonymously(auth);
+        const user = userCredential.user;
+        
+        // 2. استخدام UID الموثق كمعرف أساسي للمستخدم
+        userId = user.uid;
+        userRef = doc(db, "users", userId);
+
+        // 3. تشغيل باقي وظائف التطبيق بعد نجاح المصادقة
+        await initUser();
+        setupLiveListeners();
+        setupInviteButtons();
+        setupWithdrawalSystem();
+        fetchLeaderboard();
+
+    } catch (error) {
+        console.error("Firebase Authentication Error: ", error);
+        showModal("حدث خطأ في الاتصال بالخادم. الرجاء إعادة تحميل الصفحة.", "error");
+    }
+}
+startApp(); // بدء تشغيل التطبيق
+
 // ================= INIT USER =================
 async function initUser() {
   const snap = await getDoc(userRef);
   if (!snap.exists()) {
-    await setDoc(userRef, { telegramId: userId, username: tgUser?.username || tgUser?.first_name || "Test User", usdt: 0, localCoin: 0, level: 1, tasksCompleted: 0, referrals: 0, banned: false, lastCheckin: null, streak: 0, createdAt: new Date() });
+    await setDoc(userRef, {
+        authUid: userId, // حفظ UID الموثق
+        telegramId: tgUser ? String(tgUser.id) : "TEST_USER",
+        username: tgUser?.username || tgUser?.first_name || "Test User",
+        usdt: 0, localCoin: 0, level: 1, tasksCompleted: 0, referrals: 0,
+        banned: false, lastCheckin: null, streak: 0, createdAt: new Date()
+    });
   }
 }
-initUser();
 
 // ================= LIVE DATA (GLOBAL) =================
-onSnapshot(userRef, (snap) => {
-  if (!snap.exists()) return;
-  currentUserData = snap.data(); // *** تخزين بيانات المستخدم عند كل تحديث ***
-  
-  updateElement("username", currentUserData.username);
-  updateElement("user-initial", currentUserData.username.charAt(0).toUpperCase());
-  updateElement("user-id-display", currentUserData.telegramId);
-  updateElement("balance", Number(currentUserData.usdt).toFixed(2));
-  updateElement("local-coin", Number(currentUserData.localCoin).toFixed(1));
-  updateElement("tasks-completed", currentUserData.tasksCompleted);
-  updateElement("referrals", currentUserData.referrals);
-  updateElement("level", `LV.${currentUserData.level}`);
-  updateElement("streak-info", `إجمالي ${currentUserData.streak || 0} يوم | تسلسل ${currentUserData.streak || 0} يوم`);
-  const progress = (currentUserData.usdt % 100);
-  const levelProgressEl = document.getElementById("level-progress");
-  if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
-  if (currentUserData.banned) { showModal("حسابك محظور", "error"); tg.close(); }
-  startCountdown(currentUserData.lastCheckin);
-});
+function setupLiveListeners() {
+    onSnapshot(userRef, (snap) => {
+        if (!snap.exists()) return;
+        currentUserData = snap.data();
+        
+        updateElement("username", currentUserData.username);
+        updateElement("user-initial", currentUserData.username.charAt(0).toUpperCase());
+        updateElement("user-id-display", currentUserData.telegramId);
+        updateElement("balance", Number(currentUserData.usdt).toFixed(2));
+        updateElement("local-coin", Number(currentUserData.localCoin).toFixed(1));
+        updateElement("tasks-completed", currentUserData.tasksCompleted);
+        updateElement("referrals", currentUserData.referrals);
+        updateElement("level", `LV.${currentUserData.level}`);
+        updateElement("streak-info", `إجمالي ${currentUserData.streak || 0} يوم | تسلسل ${currentUserData.streak || 0} يوم`);
+        const progress = (currentUserData.usdt % 100);
+        const levelProgressEl = document.getElementById("level-progress");
+        if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
+        if (currentUserData.banned) { showModal("حسابك محظور", "error"); tg.close(); }
+        startCountdown(currentUserData.lastCheckin);
+    });
+}
 
 function updateElement(id, value) {
   const el = document.getElementById(id);
@@ -108,14 +143,8 @@ function startCountdown(lastCheckin) {
 
 if (checkinBtn) {
   checkinBtn.onclick = async () => {
-    if (!canCheckin) {
-        showModal("لم تمر 24 ساعة على آخر مكافأة.", "warning");
-        return;
-    }
-    if (!hasSharedToday) {
-        showModal("يجب عليك مشاركة رابط الدعوة أولاً للحصول على المكافأة اليومية.", "warning");
-        return;
-    }
+    if (!canCheckin) { showModal("لم تمر 24 ساعة على آخر مكافأة.", "warning"); return; }
+    if (!hasSharedToday) { showModal("يجب عليك مشاركة رابط الدعوة أولاً للحصول على المكافأة اليومية.", "warning"); return; }
     await updateDoc(userRef, { usdt: increment(0.1), lastCheckin: new Date(), streak: increment(1) });
     hasSharedToday = false;
     showModal("🎉 رائع! لقد حصلت على 0.1 USDT كمكافأة تسجيل حضور!", "success");
@@ -124,12 +153,10 @@ if (checkinBtn) {
 
 // ================= INVITE SYSTEM =================
 function setupInviteButtons() {
-    const createInviteHandler = (botUsername, userId) => {
+    const createInviteHandler = (botUsername) => {
         return () => {
-            if (!tgUser) {
-                showModal("يجب فتح التطبيق من داخل تيليجرام لاستخدام هذه الميزة.", "error");
-                return;
-            }
+            if (!tgUser) { showModal("يجب فتح التطبيق من داخل تيليجرام.", "error"); return; }
+            // نستخدم UID الموثق في رابط الدعوة
             const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
             hasSharedToday = true;
             showModal("شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.", "success"  );
@@ -137,70 +164,54 @@ function setupInviteButtons() {
         };
     };
     const botUsername = "gdkmgkdbot";
-    const inviteHandler = createInviteHandler(botUsername, userId);
+    const inviteHandler = createInviteHandler(botUsername);
     const inviteButtons = document.querySelectorAll(".invite-btn");
     inviteButtons.forEach(btn => { btn.onclick = inviteHandler; });
 }
-setupInviteButtons();
 
-// ================= WITHDRAWAL SYSTEM (جديد) =================
-const withdrawBtn = document.getElementById('withdraw-btn');
-const amountInput = document.getElementById('amount');
-const walletInput = document.getElementById('wallet');
+// ================= WITHDRAWAL SYSTEM =================
+function setupWithdrawalSystem() {
+    const withdrawBtn = document.getElementById('withdraw-btn');
+    const amountInput = document.getElementById('amount');
+    const walletInput = document.getElementById('wallet');
 
-if (withdrawBtn) {
-    withdrawBtn.onclick = async () => {
-        const amount = parseFloat(amountInput.value);
-        const wallet = walletInput.value.trim();
-        const minWithdrawal = 10;
+    if (withdrawBtn) {
+        withdrawBtn.onclick = async () => {
+            const amount = parseFloat(amountInput.value);
+            const wallet = walletInput.value.trim();
+            const minWithdrawal = 10;
 
-        if (isNaN(amount) || amount <= 0) {
-            showModal("الرجاء إدخال مبلغ صحيح.", "warning");
-            return;
-        }
-        if (wallet === "") {
-            showModal("الرجاء إدخال عنوان المحفظة.", "warning");
-            return;
-        }
-        if (amount < minWithdrawal) {
-            showModal(`الحد الأدنى للسحب هو ${minWithdrawal} USDT.`, "warning");
-            return;
-        }
-        if (!currentUserData || currentUserData.usdt < amount) {
-            showModal("رصيدك الحالي غير كافٍ لإتمام عملية السحب.", "error");
-            return;
-        }
+            if (isNaN(amount) || amount <= 0) { showModal("الرجاء إدخال مبلغ صحيح.", "warning"); return; }
+            if (wallet === "") { showModal("الرجاء إدخال عنوان المحفظة.", "warning"); return; }
+            if (amount < minWithdrawal) { showModal(`الحد الأدنى للسحب هو ${minWithdrawal} USDT.`, "warning"); return; }
+            if (!currentUserData || currentUserData.usdt < amount) { showModal("رصيدك الحالي غير كافٍ.", "error"); return; }
 
-        withdrawBtn.disabled = true;
-        withdrawBtn.innerText = "الرجاء الانتظار...";
+            withdrawBtn.disabled = true;
+            withdrawBtn.innerText = "الرجاء الانتظار...";
 
-        try {
-            const withdrawalsCollection = collection(db, "withdrawals");
-            await addDoc(withdrawalsCollection, {
-                userId: userId,
-                username: currentUserData.username,
-                amount: amount,
-                wallet: wallet,
-                status: "pending",
-                createdAt: serverTimestamp()
-            });
-
-            await updateDoc(userRef, {
-                usdt: increment(-amount)
-            });
-
-            showModal("✅ تم إرسال طلب السحب بنجاح! ستتم معالجته خلال 24 ساعة.", "success");
-            amountInput.value = "";
-            walletInput.value = "";
-
-        } catch (error) {
-            console.error("Error processing withdrawal: ", error);
-            showModal("حدث خطأ أثناء إرسال الطلب. الرجاء المحاولة مرة أخرى.", "error");
-        } finally {
-            withdrawBtn.disabled = false;
-            withdrawBtn.innerText = "إرسال طلب السحب";
-        }
-    };
+            try {
+                const withdrawalsCollection = collection(db, "withdrawals");
+                await addDoc(withdrawalsCollection, {
+                    userId: userId, // UID الموثق
+                    username: currentUserData.username,
+                    amount: amount,
+                    wallet: wallet,
+                    status: "pending",
+                    createdAt: serverTimestamp()
+                });
+                await updateDoc(userRef, { usdt: increment(-amount) });
+                showModal("✅ تم إرسال طلب السحب بنجاح!", "success");
+                amountInput.value = "";
+                walletInput.value = "";
+            } catch (error) {
+                console.error("Error processing withdrawal: ", error);
+                showModal("حدث خطأ أثناء إرسال الطلب.", "error");
+            } finally {
+                withdrawBtn.disabled = false;
+                withdrawBtn.innerText = "إرسال طلب السحب";
+            }
+        };
+    }
 }
 
 // ================= LEADERBOARD =================
@@ -221,7 +232,6 @@ async function fetchLeaderboard() {
         rank++;
     });
 }
-fetchLeaderboard();
 
 // ================= HELPERS =================
 function stringToColor(str) {
