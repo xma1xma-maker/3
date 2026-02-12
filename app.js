@@ -4,17 +4,18 @@ tg.ready();
 tg.expand();
 const tgUser = tg.initDataUnsafe?.user;
 
-// ================= FIREBASE (باستخدام type="module") =================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// انتظر حتى يتم تحميل الصفحة بالكامل قبل تنفيذ أي شيء
+document.addEventListener('DOMContentLoaded', (event) => {
+    main();
+});
 
-const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
-const app = initializeApp(firebaseConfig );
-const db = getFirestore(app);
-const auth = getAuth(app);
+// ================= FIREBASE (تعريف المتغيرات في النطاق العام) =================
+const { initializeApp } = firebase;
+const { getAuth, signInAnonymously, signOut } = firebase.auth;
+const { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp } = firebase.firestore;
 
 // ================= GLOBAL STATE =================
+let db, auth;
 let userId = null;
 let userRef = null;
 let hasSharedToday = false;
@@ -40,6 +41,11 @@ if (modalCloseBtn) { modalCloseBtn.onclick = () => modalOverlay.classList.remove
 // ================= APP ENTRY POINT =================
 async function main() {
     try {
+        const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
         const userCredential = await signInAnonymously(auth);
         userId = userCredential.user.uid;
         userRef = doc(db, "users", userId);
@@ -57,10 +63,9 @@ async function main() {
 
     } catch (error) {
         console.error("Critical Error:", error);
-        showModal("خطأ حرج في الاتصال. الرجاء المحاولة مرة أخرى.", "error");
+        showModal(`خطأ حرج: ${error.message}`, "error");
     }
 }
-main();
 
 // ================= FUNCTIONS =================
 
