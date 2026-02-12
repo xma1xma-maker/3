@@ -9,31 +9,27 @@
 </head>
 <body>
   <div class="container">
-    <!-- Profile Header -->
+    <!-- Profile Header with CORRECT IDs -->
     <div class="profile-header">
-        <!-- تم ترك المحتوى فارغاً ليتم ملؤه بواسطة JavaScript -->
         <div class="avatar" id="profile-user-initial"></div>
         <h2 id="profile-username"></h2>
         <p class="user-id">ID: <span id="profile-user-id-display"></span></p>
     </div>
 
-    <!-- Profile Stats -->
+    <!-- Profile Stats with CORRECT IDs -->
     <div class="profile-stats">
         <div class="stat-item">
             <i class="ri-wallet-3-line"></i>
-            <!-- تم ترك المحتوى فارغاً -->
             <b id="profile-balance"></b>
             <span>رصيد USDT</span>
         </div>
         <div class="stat-item">
             <i class="ri-copper-coin-line"></i>
-            <!-- تم ترك المحتوى فارغاً -->
             <b id="profile-local-coin"></b>
             <span>رصيد BTC Coin</span>
         </div>
         <div class="stat-item">
             <i class="ri-user-add-line"></i>
-            <!-- تم ترك المحتوى فارغاً -->
             <b id="profile-referrals"></b>
             <span>الإحالات</span>
         </div>
@@ -85,6 +81,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  <script src="app.js?v=2"></script>
+  <!-- Cache Busting to force reload -->
+  <script src="app.js?v=3"></script>
 </body>
 </html>
