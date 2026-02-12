@@ -1,5 +1,4 @@
-// ================= TELEGRAM (SAFE INITIALIZATION) =================
-// هذا الكود يتحقق إذا كان التطبيق يعمل داخل تيليجرام أم لا
+// ================= TELEGRAM =================
 const tg = window.Telegram?.WebApp;
 if (tg) {
     tg.ready();
@@ -41,7 +40,6 @@ async function main() {
         db = firebase.firestore();
 
         const userCredential = await auth.signInAnonymously();
-        // إذا لم يكن التطبيق في تيليجرام، استخدم ID وهمي
         userId = tgUser ? userCredential.user.uid : "BROWSER_TEST_USER";
         userRef = db.collection("users").doc(userId);
 
@@ -271,5 +269,5 @@ function stringToColor(str) {
   return color;
 }
 
-// استدعاء الدالة الرئيسية لبدء التطبيق
+// ================= START THE APP =================
 main();
