@@ -14,13 +14,13 @@ const app = initializeApp(firebaseConfig );
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// ================= USER & APP STATE =================
+// ================= GLOBAL STATE =================
 let userId = null;
 let userRef = null;
 let hasSharedToday = false;
 let currentUserData = null;
 
-// ================= CUSTOM MODAL FUNCTION =================
+// ================= CUSTOM MODAL =================
 const modalOverlay = document.getElementById('custom-modal');
 const modalContent = document.querySelector('.modal-content');
 const modalIcon = document.getElementById('modal-icon');
@@ -35,54 +35,32 @@ function showModal(message, type = 'success') {
     modalMessage.innerText = message;
     modalOverlay.classList.add('show');
 }
+if (modalCloseBtn) { modalCloseBtn.onclick = () => modalOverlay.classList.remove('show'); }
 
-if (modalCloseBtn) {
-    modalCloseBtn.onclick = () => {
-        modalOverlay.classList.remove('show');
-    };
-}
-
-// ================= APP INITIALIZATION =================
+// ================= APP ENTRY POINT =================
 async function startApp() {
     try {
         const userCredential = await signInAnonymously(auth);
-        const user = userCredential.user;
-        userId = user.uid;
+        userId = userCredential.user.uid;
         userRef = doc(db, "users", userId);
         await initUser();
-        route(); // توجيه التطبيق بعد المصادقة وتهيئة المستخدم
+        
+        // المستمع الذي يملأ البيانات ويفعّل كل شيء بعد وصول البيانات
+        setupLiveListenersAndBindEvents();
+
     } catch (error) {
-        console.error("Firebase Authentication Error: ", error);
-        showModal("حدث خطأ في الاتصال بالخادم. الرجاء إعادة تحميل الصفحة.", "error");
+        console.error("Authentication or Initialization Error: ", error);
+        showModal("خطأ في الاتصال بالخادم. الرجاء إعادة تحميل الصفحة.", "error");
     }
 }
 startApp();
-
-// ================= ROUTER (الموجه المصحح) =================
-function route() {
-    const path = window.location.pathname;
-
-    // هذه الدوال يجب أن تعمل في كل الصفحات
-    setupLiveListeners();
-    setupInviteButtons();
-
-    // هذه الدوال تعمل فقط في صفحات محددة
-    if (path.includes('profile.html')) {
-        setupNavigation();
-    } else if (path.includes('withdraw.html')) {
-        setupWithdrawalSystem();
-    } else if (path.includes('leaderboard.html')) {
-        fetchLeaderboard();
-    }
-}
 
 // ================= INIT USER =================
 async function initUser() {
   const snap = await getDoc(userRef);
   if (!snap.exists()) {
     await setDoc(userRef, {
-        authUid: userId,
-        telegramId: tgUser ? String(tgUser.id) : "TEST_USER",
+        authUid: userId, telegramId: tgUser ? String(tgUser.id) : "TEST_USER",
         username: tgUser?.username || tgUser?.first_name || "Test User",
         usdt: 0, localCoin: 0, level: 1, tasksCompleted: 0, referrals: 0,
         banned: false, lastCheckin: null, streak: 0, createdAt: new Date()
@@ -90,120 +68,70 @@ async function initUser() {
   }
 }
 
-// ================= LIVE DATA (GLOBAL) (المستمع الشامل) =================
-function setupLiveListeners() {
+// ================= CORE FUNCTION (Data Listener & Event Binding) =================
+function setupLiveListenersAndBindEvents() {
     onSnapshot(userRef, (snap) => {
         if (!snap.exists()) return;
         currentUserData = snap.data();
         
-        // تحديث جميع العناصر الممكنة في أي صفحة
-        // الدالة updateElement آمنة ولن تسبب خطأ إذا لم تجد العنصر
-        updateElement("username", currentUserData.username);
-        updateElement("user-initial", currentUserData.username.charAt(0).toUpperCase());
-        updateElement("user-id-display", currentUserData.telegramId);
-        updateElement("balance", Number(currentUserData.usdt).toFixed(2));
-        updateElement("local-coin", Number(currentUserData.localCoin).toFixed(1));
-        updateElement("tasks-completed", currentUserData.tasksCompleted);
-        updateElement("referrals", currentUserData.referrals);
-        updateElement("level", `LV.${currentUserData.level}`);
-        updateElement("streak-info", `إجمالي ${currentUserData.streak || 0} يوم | تسلسل ${currentUserData.streak || 0} يوم`);
+        // 1. تحديث واجهة المستخدم بالبيانات الجديدة
+        updateUI(currentUserData);
         
-        const progress = (currentUserData.usdt % 100);
-        const levelProgressEl = document.getElementById("level-progress");
-        if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
-        
-        if (currentUserData.banned) { 
-            showModal("حسابك محظور", "error"); 
-            tg.close(); 
-        }
-        
-        // تشغيل عداد الحضور اليومي فقط إذا كان موجوداً في الصفحة
-        if (document.getElementById("countdown")) {
-            startCountdown(currentUserData.lastCheckin);
-        }
+        // 2. تفعيل الأزرار والوظائف التي تعتمد على البيانات
+        // يتم استدعاؤها هنا لضمان أن currentUserData متاح دائماً
+        bindPageSpecificEvents();
     });
+}
+
+// ================= UI UPDATER =================
+function updateUI(data) {
+    updateElement("username", data.username);
+    updateElement("user-initial", data.username.charAt(0).toUpperCase());
+    updateElement("user-id-display", data.telegramId);
+    updateElement("balance", Number(data.usdt).toFixed(2));
+    updateElement("local-coin", Number(data.localCoin).toFixed(1));
+    updateElement("tasks-completed", data.tasksCompleted);
+    updateElement("referrals", data.referrals);
+    updateElement("level", `LV.${data.level}`);
+    updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
+    
+    const progress = (data.usdt % 100);
+    const levelProgressEl = document.getElementById("level-progress");
+    if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
+    
+    if (data.banned) { showModal("حسابك محظور", "error"); tg.close(); }
+    
+    if (document.getElementById("countdown")) {
+        startCountdown(data.lastCheckin);
+    }
 }
 
 function updateElement(id, value) {
   const el = document.getElementById(id);
-  if (el) {
-      el.innerText = value;
-  }
+  if (el) el.innerText = value;
 }
 
-// ================= DAILY CHECK-IN =================
-const checkinBtn = document.getElementById("checkin-btn");
-const countdownEl = document.getElementById("countdown");
-let countdownInterval = null;
-let canCheckin = false;
-
-function startCountdown(lastCheckin) {
-  if (!countdownEl || !checkinBtn) return;
-  if (countdownInterval) clearInterval(countdownInterval);
-  const nextTime = lastCheckin ? new Date(new Date(lastCheckin.toDate()).getTime() + 24 * 60 * 60 * 1000) : new Date();
-  function updateTimer() {
-    const now = new Date();
-    const diff = nextTime - now;
-    if (diff <= 0) {
-      canCheckin = true;
-      countdownEl.innerText = "تسجيل الحضور";
-      checkinBtn.disabled = false;
-      clearInterval(countdownInterval);
-      return;
-    }
-    canCheckin = false;
-    checkinBtn.disabled = true;
-    const h = Math.floor(diff / 1000 / 60 / 60);
-    const m = Math.floor((diff / 1000 / 60) % 60);
-    const s = Math.floor((diff / 1000) % 60);
-    countdownEl.innerText = `⏳ ${h}h ${m}m ${s}s`;
-  }
-  updateTimer();
-  countdownInterval = setInterval(updateTimer, 1000);
-}
-
-if (checkinBtn) {
-  checkinBtn.onclick = async () => {
-    if (!canCheckin) { showModal("لم تمر 24 ساعة على آخر مكافأة.", "warning"); return; }
-    if (!hasSharedToday) { showModal("يجب عليك مشاركة رابط الدعوة أولاً للحصول على المكافأة اليومية.", "warning"); return; }
-    await updateDoc(userRef, { usdt: increment(0.1), lastCheckin: new Date(), streak: increment(1) });
-    hasSharedToday = false;
-    showModal("🎉 رائع! لقد حصلت على 0.1 USDT كمكافأة تسجيل حضور!", "success");
-  };
-}
-
-// ================= INVITE SYSTEM =================
-function setupInviteButtons() {
-    const createInviteHandler = (botUsername) => {
-        return () => {
-            if (!tgUser) { showModal("يجب فتح التطبيق من داخل تيليجرام.", "error"); return; }
-            const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
-            hasSharedToday = true;
-            showModal("شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.", "success"  );
-            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent("انضم إلى هذا البوت الرائع واحصل على مكافآت!")}`);
-        };
-    };
+// ================= EVENT BINDING (تفعيل الأزرار) =================
+function bindPageSpecificEvents() {
+    // تفعيل كل الأزرار الممكنة، الكود سيجدها فقط في الصفحات الصحيحة
+    
+    // --- أزرار الدعوة (في كل الصفحات) ---
     const botUsername = "gdkmgkdbot";
-    const inviteHandler = createInviteHandler(botUsername);
-    const inviteButtons = document.querySelectorAll(".invite-btn");
-    inviteButtons.forEach(btn => { btn.onclick = inviteHandler; });
-}
+    const inviteHandler = () => {
+        if (!tgUser) { showModal("يجب فتح التطبيق من داخل تيليجرام.", "error"); return; }
+        const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
+        hasSharedToday = true;
+        showModal("شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.", "success"  );
+        tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent("انضم إلى هذا البوت الرائع!")}`);
+    };
+    document.querySelectorAll(".invite-btn").forEach(btn => { btn.onclick = inviteHandler; });
 
-// ================= NAVIGATION HELPERS =================
-function setupNavigation() {
+    // --- أزرار صفحة الملف الشخصي ---
     const goToWithdrawBtn = document.getElementById('go-to-withdraw-btn');
-    if (goToWithdrawBtn) {
-        goToWithdrawBtn.onclick = () => {
-            window.location.href = 'withdraw.html';
-        };
-    }
+    if (goToWithdrawBtn) goToWithdrawBtn.onclick = () => window.location.href = 'withdraw.html';
 
     const supportBtn = document.getElementById('support-btn');
-    if (supportBtn) {
-        supportBtn.onclick = () => {
-            tg.openTelegramLink('https://t.me/YourSupportUsername' ); // غير هذا الرابط
-        };
-    }
+    if (supportBtn) supportBtn.onclick = () => tg.openTelegramLink('https://t.me/YourSupportUsername' );
 
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
@@ -212,28 +140,22 @@ function setupNavigation() {
                 if (confirmed) {
                     try {
                         await signOut(auth);
-                        showModal("تم تسجيل الخروج بنجاح. سيتم إعادة تشغيل التطبيق.", "success");
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
+                        showModal("تم تسجيل الخروج بنجاح.", "success");
+                        setTimeout(() => window.location.reload(), 2000);
                     } catch (error) {
-                        console.error("Sign out error", error);
-                        showModal("فشل تسجيل الخروج. الرجاء المحاولة مرة أخرى.", "error");
+                        showModal("فشل تسجيل الخروج.", "error");
                     }
                 }
             });
         };
     }
-}
 
-// ================= WITHDRAWAL SYSTEM =================
-function setupWithdrawalSystem() {
+    // --- زر السحب في صفحة السحب ---
     const withdrawBtn = document.getElementById('withdraw-btn');
-    const amountInput = document.getElementById('amount');
-    const walletInput = document.getElementById('wallet');
-
     if (withdrawBtn) {
         withdrawBtn.onclick = async () => {
+            const amountInput = document.getElementById('amount');
+            const walletInput = document.getElementById('wallet');
             const amount = parseFloat(amountInput.value);
             const wallet = walletInput.value.trim();
             const minWithdrawal = 10;
@@ -243,25 +165,16 @@ function setupWithdrawalSystem() {
             if (amount < minWithdrawal) { showModal(`الحد الأدنى للسحب هو ${minWithdrawal} USDT.`, "warning"); return; }
             if (!currentUserData || currentUserData.usdt < amount) { showModal("رصيدك الحالي غير كافٍ.", "error"); return; }
 
-            withdrawBtn.disabled = true;
-            withdrawBtn.innerText = "الرجاء الانتظار...";
-
+            withdrawBtn.disabled = true; withdrawBtn.innerText = "الرجاء الانتظار...";
             try {
-                const withdrawalsCollection = collection(db, "withdrawals");
-                await addDoc(withdrawalsCollection, {
-                    userId: userId,
-                    username: currentUserData.username,
-                    amount: amount,
-                    wallet: wallet,
-                    status: "pending",
-                    createdAt: serverTimestamp()
+                await addDoc(collection(db, "withdrawals"), {
+                    userId: userId, username: currentUserData.username, amount: amount, wallet: wallet,
+                    status: "pending", createdAt: serverTimestamp()
                 });
                 await updateDoc(userRef, { usdt: increment(-amount) });
                 showModal("✅ تم إرسال طلب السحب بنجاح!", "success");
-                amountInput.value = "";
-                walletInput.value = "";
+                amountInput.value = ""; walletInput.value = "";
             } catch (error) {
-                console.error("Error processing withdrawal: ", error);
                 showModal("حدث خطأ أثناء إرسال الطلب.", "error");
             } finally {
                 withdrawBtn.disabled = false;
@@ -269,15 +182,67 @@ function setupWithdrawalSystem() {
             }
         };
     }
+    
+    // --- زر تسجيل الحضور اليومي ---
+    const checkinBtn = document.getElementById("checkin-btn");
+    if (checkinBtn) {
+        checkinBtn.onclick = async () => {
+            if (!canCheckin) { showModal("لم تمر 24 ساعة.", "warning"); return; }
+            if (!hasSharedToday) { showModal("شارك أولاً للحصول على المكافأة.", "warning"); return; }
+            await updateDoc(userRef, { usdt: increment(0.1), lastCheckin: new Date(), streak: increment(1) });
+            hasSharedToday = false;
+            showModal("🎉 حصلت على 0.1 USDT!", "success");
+        };
+    }
+    
+    // --- جلب بيانات لوحة الصدارة (فقط في صفحتها) ---
+    if (document.getElementById("leaderboard-list")) {
+        fetchLeaderboard();
+    }
+}
+
+// ================= DAILY CHECK-IN TIMER =================
+let canCheckin = false;
+let countdownInterval; // تعريف المتغير هنا
+function startCountdown(lastCheckin) {
+  const countdownEl = document.getElementById("countdown");
+  const checkinBtnEl = document.getElementById("checkin-btn");
+  if (!countdownEl || !checkinBtnEl) return;
+  
+  clearInterval(countdownInterval); // إيقاف أي عداد سابق
+
+  const nextTime = lastCheckin ? new Date(lastCheckin.toDate().getTime() + 24 * 60 * 60 * 1000) : new Date();
+  
+  function updateTimer() {
+    const now = new Date();
+    const diff = nextTime - now;
+    if (diff <= 0) {
+      canCheckin = true;
+      countdownEl.innerText = "تسجيل الحضور";
+      checkinBtnEl.disabled = false;
+      clearInterval(countdownInterval); // إيقاف العداد عند الانتهاء
+      return;
+    }
+    canCheckin = false;
+    checkinBtnEl.disabled = true;
+    const h = Math.floor(diff / 1000 / 60 / 60);
+    const m = Math.floor((diff / 1000 / 60) % 60);
+    const s = Math.floor((diff / 1000) % 60);
+    countdownEl.innerText = `⏳ ${h}h ${m}m ${s}s`;
+  };
+  
+  updateTimer();
+  countdownInterval = setInterval(updateTimer, 1000);
 }
 
 // ================= LEADERBOARD =================
-const leaderboardList = document.getElementById("leaderboard-list");
 async function fetchLeaderboard() {
+    const leaderboardList = document.getElementById("leaderboard-list");
     if (!leaderboardList) return;
-    const usersCollection = collection(db, "users");
-    const q = query(usersCollection, orderBy("usdt", "desc"), limit(20));
+    
+    const q = query(collection(db, "users"), orderBy("usdt", "desc"), limit(20));
     const querySnapshot = await getDocs(q);
+    
     leaderboardList.innerHTML = "";
     let rank = 1;
     querySnapshot.forEach((docSnap) => {
@@ -293,9 +258,11 @@ async function fetchLeaderboard() {
 // ================= HELPERS =================
 function stringToColor(str) {
   if (!str) return '#8b949e';
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
+  let hash = 0; str.split('').forEach(char => { hash = char.charCodeAt(0) + ((hash << 5) - hash); });
   let color = '#';
-  for (let i = 0; i < 3; i++) { let value = (hash >> (i * 8)) & 0xFF; color += ('00' + value.toString(16)).substr(-2); }
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xFF;
+    color += value.toString(16).padStart(2, '0');
+  }
   return color;
 }
