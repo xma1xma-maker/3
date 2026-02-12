@@ -4,11 +4,6 @@ tg.ready();
 tg.expand();
 const tgUser = tg.initDataUnsafe?.user;
 
-// انتظر حتى يتم تحميل الصفحة بالكامل قبل تنفيذ أي شيء
-document.addEventListener('DOMContentLoaded', (event) => {
-    main();
-});
-
 // ================= FIREBASE (تعريف المتغيرات في النطاق العام) =================
 const { initializeApp } = firebase;
 const { getAuth, signInAnonymously, signOut } = firebase.auth;
@@ -260,3 +255,6 @@ function stringToColor(str) {
   }
   return color;
 }
+
+// استدعاء الدالة الرئيسية لبدء التطبيق
+main();
