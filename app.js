@@ -75,18 +75,26 @@ function setupLiveListenersAndBindEvents() {
     });
 }
 
-// ================= UI UPDATER =================
+// ================= UI UPDATER (النسخة المحدثة) =================
 function updateUI(data) {
+    // تحديث عناصر الصفحة الرئيسية
     updateElement("username", data.username);
     updateElement("user-initial", data.username.charAt(0).toUpperCase());
-    updateElement("user-id-display", data.telegramId);
     updateElement("balance", Number(data.usdt).toFixed(2));
     updateElement("local-coin", Number(data.localCoin).toFixed(1));
     updateElement("tasks-completed", data.tasksCompleted);
-    updateElement("referrals", data.referrals);
     updateElement("level", `LV.${data.level}`);
     updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
     
+    // *** تحديث عناصر صفحة الملف الشخصي (باستخدام الـ IDs الجديدة) ***
+    updateElement("profile-username", data.username);
+    updateElement("profile-user-initial", data.username.charAt(0).toUpperCase());
+    updateElement("profile-user-id-display", data.telegramId);
+    updateElement("profile-balance", Number(data.usdt).toFixed(2));
+    updateElement("profile-local-coin", Number(data.localCoin).toFixed(1));
+    updateElement("profile-referrals", data.referrals);
+
+    // تحديث العناصر المشتركة
     const progress = (data.usdt % 100);
     const levelProgressEl = document.getElementById("level-progress");
     if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
@@ -160,7 +168,8 @@ function bindPageSpecificEvents() {
             } catch (error) {
                 showModal("حدث خطأ أثناء إرسال الطلب.", "error");
             } finally {
-                withdrawBtn.disabled = false; withdrawBtn.innerText = "إرسال طلب السحب";
+                withdrawBtn.disabled = false;
+                withdrawBtn.innerText = "إرسال طلب السحب";
             }
         };
     }
@@ -187,16 +196,9 @@ let countdownInterval;
 function startCountdown(lastCheckin) {
   const countdownEl = document.getElementById("countdown");
   const checkinBtnEl = document.getElementById("checkin-btn");
-  
-  // *** هذا هو التصحيح: لا تفعل شيئاً إذا كانت العناصر غير موجودة ***
-  if (!countdownEl || !checkinBtnEl) {
-    return;
-  }
-  
+  if (!countdownEl || !checkinBtnEl) return;
   clearInterval(countdownInterval);
-
   const nextTime = lastCheckin ? new Date(lastCheckin.toDate().getTime() + 24 * 60 * 60 * 1000) : new Date();
-  
   function updateTimer() {
     const now = new Date();
     const diff = nextTime - now;
@@ -214,7 +216,6 @@ function startCountdown(lastCheckin) {
     const s = Math.floor((diff / 1000) % 60);
     countdownEl.innerText = `⏳ ${h}h ${m}m ${s}s`;
   };
-  
   updateTimer();
   countdownInterval = setInterval(updateTimer, 1000);
 }
@@ -223,10 +224,8 @@ function startCountdown(lastCheckin) {
 async function fetchLeaderboard() {
     const leaderboardList = document.getElementById("leaderboard-list");
     if (!leaderboardList) return;
-    
     const q = query(collection(db, "users"), orderBy("usdt", "desc"), limit(20));
     const querySnapshot = await getDocs(q);
-    
     leaderboardList.innerHTML = "";
     let rank = 1;
     querySnapshot.forEach((docSnap) => {
