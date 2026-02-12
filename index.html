@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Firebase Connection Test</title>
+    <title>Firebase Connection Test (jsDelivr)</title>
     <style>
         body { font-family: sans-serif; background-color: #121212; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         #status { font-size: 24px; padding: 40px; border-radius: 10px; text-align: center; }
@@ -14,15 +14,16 @@
 <body>
 
     <div id="status" class="connecting">
-        <h1>جاري محاولة الاتصال بـ Firebase...</h1>
+        <h1>جاري محاولة الاتصال بـ Firebase... (عبر jsDelivr)</h1>
     </div>
 
-    <!-- 1. تحميل مكتبات Firebase بالطريقة الكلاسيكية -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+    <!-- *** التغيير الأهم: تحميل Firebase من jsDelivr بدلاً من gstatic *** -->
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/firebase-app.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/firebase-auth.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@10.7.1/firebase-firestore.min.js"></script>
 
     <script>
-        // 2. تعريف إعدادات Firebase الخاصة بك
+        // الكود المتبقي يبقى كما هو تماماً
         const firebaseConfig = {
             apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ",
             authDomain: "tele-follow.firebaseapp.com",
@@ -32,32 +33,24 @@
             appId: "1:311701431089:web:fcba431dcae893a87cc610"
         };
 
-        // 3. الحصول على عنصر الحالة من الصفحة
         const statusDiv = document.getElementById('status' );
 
         try {
-            // 4. تهيئة التطبيق
+            // ملاحظة: الدوال الآن موجودة مباشرة في الكائن firebase
             const app = firebase.initializeApp(firebaseConfig);
-            const auth = firebase.auth.getAuth(app);
+            const auth = firebase.getAuth(app);
 
-            // 5. محاولة تسجيل الدخول المجهول
-            firebase.auth.signInAnonymously(auth)
+            firebase.signInAnonymously(auth)
                 .then((userCredential) => {
-                    // 6. في حالة النجاح
-                    console.log("SUCCESS! User UID:", userCredential.user.uid);
                     statusDiv.className = 'success';
-                    statusDiv.innerHTML = `<h1>✅ نجح الاتصال!</h1><p>تم تسجيل الدخول بنجاح.</p>`;
+                    statusDiv.innerHTML = `<h1>✅ نجح الاتصال!</h1><p>تم تسجيل الدخول بنجاح عبر jsDelivr.</p>`;
                 })
                 .catch((error) => {
-                    // 7. في حالة فشل تسجيل الدخول
-                    console.error("SIGN-IN FAILED:", error);
                     statusDiv.className = 'error';
                     statusDiv.innerHTML = `<h1>❌ فشل تسجيل الدخول</h1><p>${error.message}</p>`;
                 });
 
         } catch (error) {
-            // 8. في حالة فشل تهيئة التطبيق نفسه
-            console.error("INITIALIZATION FAILED:", error);
             statusDiv.className = 'error';
             statusDiv.innerHTML = `<h1>❌ فشل تهيئة Firebase</h1><p>${error.message}</p>`;
         }
