@@ -19,7 +19,7 @@
     </div>
     <!-- Profile Stats -->
     <div class="profile-stats">
-        <div class="stat-item">
+        <div class="stat-item" id="go-to-withdraw-btn">
             <i class="ri-wallet-3-line"></i>
             <b id="profile-balance">0.00</b>
             <span>رصيد USDT</span>
@@ -35,12 +35,6 @@
             <span>الإحالات</span>
         </div>
     </div>
-
-    <!-- Withdraw Button -->
-    <button id="go-to-withdraw-btn" class="submit-btn" style="margin-bottom: 30px;">
-        💸 سحب الأرباح
-    </button>
-
     <!-- Profile Actions -->
     <div class="profile-actions">
         <div class="action-item invite-btn">
@@ -61,6 +55,15 @@
     </div>
   </div>
 
+  <!-- Custom Modal -->
+  <div id="custom-modal" class="modal-overlay">
+    <div class="modal-content">
+      <i id="modal-icon" class="ri-checkbox-circle-fill"></i>
+      <p id="modal-message">هذه رسالة تجريبية.</p>
+      <button id="modal-close-btn">حسناً</button>
+    </div>
+  </div>
+
   <!-- Bottom Nav -->
   <nav>
     <a href="index.html"><i class="ri-home-5-line"></i><span>الرئيسية</span></a>
@@ -69,21 +72,6 @@
     <a href="profile.html" class="active"><i class="ri-user-3-fill"></i><span>الشخصي</span></a>
   </nav>
   
-  <!-- Custom Modal -->
-  <div id="custom-modal" class="modal-overlay">
-    <div class="modal-content">
-      <i id="modal-icon" class="ri-checkbox-circle-fill"></i>
-      <p id="modal-message">هذه هي رسالتك.</p>
-      <button id="modal-close-btn">حسناً</button>
-    </div>
-  </div>
-
-  <!-- Firebase (الطريقة الكلاسيكية المضمونة ) -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
-
-  <!-- ملف التطبيق الخاص بنا (بدون type="module" ) -->
-  <script src="app.js" defer></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
