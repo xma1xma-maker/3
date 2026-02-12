@@ -42,27 +42,47 @@ if (modalCloseBtn) {
     };
 }
 
-// ================= APP INITIALIZATION =================
+// ================= APP INITIALIZATION (نقطة البداية الجديدة) =================
 async function startApp() {
     try {
+        // 1. المصادقة أولاً وقبل كل شيء
         const userCredential = await signInAnonymously(auth);
         const user = userCredential.user;
         userId = user.uid;
         userRef = doc(db, "users", userId);
 
+        // 2. تهيئة المستخدم (هذه الخطوة مشتركة لكل الصفحات)
         await initUser();
-        setupLiveListeners();
-        setupInviteButtons();
-        setupWithdrawalSystem();
-        setupNavigation(); // استدعاء دالة التنقل
-        fetchLeaderboard();
+        
+        // 3. تشغيل الوظائف بناءً على الصفحة الحالية
+        route();
 
     } catch (error) {
         console.error("Firebase Authentication Error: ", error);
         showModal("حدث خطأ في الاتصال بالخادم. الرجاء إعادة تحميل الصفحة.", "error");
     }
 }
-startApp();
+startApp(); // بدء تشغيل التطبيق
+
+// ================= ROUTER (الموجه الجديد) =================
+function route() {
+    const path = window.location.pathname;
+
+    // دوال تعمل على كل الصفحات
+    setupLiveListeners();
+    setupInviteButtons(); // أزرار الدعوة قد تكون في أكثر من صفحة
+
+    // دوال تعمل حسب الصفحة
+    if (path.includes('index.html') || path === '/') {
+        // لا يوجد دوال خاصة بالصفحة الرئيسية حالياً
+    } else if (path.includes('profile.html')) {
+        setupNavigation();
+    } else if (path.includes('withdraw.html')) {
+        setupWithdrawalSystem();
+    } else if (path.includes('leaderboard.html')) {
+        fetchLeaderboard();
+    }
+}
 
 // ================= INIT USER =================
 async function initUser() {
@@ -80,10 +100,12 @@ async function initUser() {
 
 // ================= LIVE DATA (GLOBAL) =================
 function setupLiveListeners() {
+    // هذا المستمع يجب أن يعمل في كل الصفحات لتحديث البيانات المشتركة
     onSnapshot(userRef, (snap) => {
         if (!snap.exists()) return;
         currentUserData = snap.data();
         
+        // تحديث العناصر المشتركة بين الصفحات (إذا وجدت)
         updateElement("username", currentUserData.username);
         updateElement("user-initial", currentUserData.username.charAt(0).toUpperCase());
         updateElement("user-id-display", currentUserData.telegramId);
@@ -93,11 +115,17 @@ function setupLiveListeners() {
         updateElement("referrals", currentUserData.referrals);
         updateElement("level", `LV.${currentUserData.level}`);
         updateElement("streak-info", `إجمالي ${currentUserData.streak || 0} يوم | تسلسل ${currentUserData.streak || 0} يوم`);
+        
         const progress = (currentUserData.usdt % 100);
         const levelProgressEl = document.getElementById("level-progress");
         if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
+        
         if (currentUserData.banned) { showModal("حسابك محظور", "error"); tg.close(); }
-        startCountdown(currentUserData.lastCheckin);
+        
+        // تشغيل العداد فقط إذا كان العنصر موجوداً في الصفحة
+        if (document.getElementById("countdown")) {
+            startCountdown(currentUserData.lastCheckin);
+        }
     });
 }
 
