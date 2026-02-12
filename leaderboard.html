@@ -14,10 +14,7 @@
         <h1>لوحة الصدارة</h1>
     </div>
     
-    <!-- 
-      هذه القائمة فارغة عن قصد.
-      سيقوم ملف app.js بتعبئتها بالمتصدرين الحقيقيين من قاعدة البيانات.
-    -->
+    <!-- هذه القائمة فارغة عن قصد ليتم ملؤها من Firebase -->
     <div class="leaderboard-list" id="leaderboard-list"></div>
 
   </div>
@@ -39,6 +36,12 @@
     </div>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <!-- Firebase (الطريقة الكلاسيكية المضمونة ) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+
+  <!-- ملف التطبيق الخاص بنا (بدون type="module" ) -->
+  <script src="app.js"></script>
 </body>
 </html>
