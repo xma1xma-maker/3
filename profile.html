@@ -5,38 +5,47 @@
   <title>الملف الشخصي</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
-  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
 </head>
 <body>
   <div class="container">
     <!-- Profile Header -->
     <div class="profile-header">
-        <div class="avatar">
-            <span id="profile-user-initial">U</span>
-        </div>
-        <h2 id="profile-username">Username</h2>
-        <p class="user-id">ID: <span id="profile-user-id-display">...</span></p>
+        <!-- تم ترك المحتوى فارغاً ليتم ملؤه بواسطة JavaScript -->
+        <div class="avatar" id="profile-user-initial"></div>
+        <h2 id="profile-username"></h2>
+        <p class="user-id">ID: <span id="profile-user-id-display"></span></p>
     </div>
+
     <!-- Profile Stats -->
     <div class="profile-stats">
-        <div class="stat-item" id="go-to-withdraw-btn">
+        <div class="stat-item">
             <i class="ri-wallet-3-line"></i>
-            <b id="profile-balance">0.00</b>
+            <!-- تم ترك المحتوى فارغاً -->
+            <b id="profile-balance"></b>
             <span>رصيد USDT</span>
         </div>
         <div class="stat-item">
             <i class="ri-copper-coin-line"></i>
-            <b id="profile-local-coin">0.0</b>
+            <!-- تم ترك المحتوى فارغاً -->
+            <b id="profile-local-coin"></b>
             <span>رصيد BTC Coin</span>
         </div>
         <div class="stat-item">
             <i class="ri-user-add-line"></i>
-            <b id="profile-referrals">0</b>
+            <!-- تم ترك المحتوى فارغاً -->
+            <b id="profile-referrals"></b>
             <span>الإحالات</span>
         </div>
     </div>
+
     <!-- Profile Actions -->
     <div class="profile-actions">
+        <div id="go-to-withdraw-btn" class="action-item">
+            <i class="ri-hand-coin-line"></i>
+            <span>سحب الأرباح</span>
+            <i class="ri-arrow-left-s-line"></i>
+        </div>
         <div class="action-item invite-btn">
             <i class="ri-share-forward-line"></i>
             <span>دعوة صديق</span>
@@ -55,12 +64,12 @@
     </div>
   </div>
 
-  <!-- Custom Modal -->
+  <!-- Custom Modal (for alerts ) -->
   <div id="custom-modal" class="modal-overlay">
     <div class="modal-content">
-      <i id="modal-icon" class="ri-checkbox-circle-fill"></i>
-      <p id="modal-message">هذه رسالة تجريبية.</p>
-      <button id="modal-close-btn">حسناً</button>
+        <i id="modal-icon" class="ri-checkbox-circle-fill"></i>
+        <p id="modal-message">This is a message</p>
+        <button id="modal-close-btn">حسناً</button>
     </div>
   </div>
 
@@ -71,7 +80,7 @@
     <a href="leaderboard.html"><i class="ri-trophy-line"></i><span>التصنيف</span></a>
     <a href="profile.html" class="active"><i class="ri-user-3-fill"></i><span>الشخصي</span></a>
   </nav>
-  
+
   <!-- Classic & RELIABLE Script Loading (Guaranteed Order & Compatibility) -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
