@@ -1,8 +1,11 @@
-// ================= TELEGRAM =================
-const tg = window.Telegram.WebApp;
-tg.ready( );
-tg.expand();
-const tgUser = tg.initDataUnsafe?.user;
+// ================= TELEGRAM (SAFE INITIALIZATION) =================
+// هذا الكود يتحقق إذا كان التطبيق يعمل داخل تيليجرام أم لا
+const tg = window.Telegram?.WebApp;
+if (tg) {
+    tg.ready();
+    tg.expand();
+}
+const tgUser = tg?.initDataUnsafe?.user;
 
 // ================= GLOBAL STATE =================
 let db, auth;
@@ -33,13 +36,13 @@ async function main() {
     try {
         const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
         
-        // استخدام الطريقة المتوافقة (Compatibility Mode)
         firebase.initializeApp(firebaseConfig);
         auth = firebase.auth();
         db = firebase.firestore();
 
         const userCredential = await auth.signInAnonymously();
-        userId = userCredential.user.uid;
+        // إذا لم يكن التطبيق في تيليجرام، استخدم ID وهمي
+        userId = tgUser ? userCredential.user.uid : "BROWSER_TEST_USER";
         userRef = db.collection("users").doc(userId);
 
         await initUser();
@@ -66,8 +69,8 @@ async function initUser() {
   if (!snap.exists) {
     await userRef.set({
         authUid: userId, 
-        telegramId: tgUser ? String(tgUser.id) : "TEST_USER",
-        username: tgUser?.username || tgUser?.first_name || "Test User",
+        telegramId: tgUser ? String(tgUser.id) : "BROWSER_TEST_ID",
+        username: tgUser?.username || tgUser?.first_name || "Browser User",
         usdt: 0, localCoin: 0, level: 1, tasksCompleted: 0, referrals: 0,
         banned: false, lastCheckin: null, streak: 0, 
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -96,7 +99,7 @@ function updateUI(data) {
     const levelProgressEl = document.getElementById("level-progress");
     if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
     
-    if (data.banned) { showModal("حسابك محظور", "error"); tg.close(); }
+    if (data.banned) { showModal("حسابك محظور", "error"); if (tg) tg.close(); }
     
     startCountdown(data.lastCheckin);
 }
@@ -109,7 +112,7 @@ function updateElement(id, value) {
 function bindGlobalEvents() {
     const botUsername = "gdkmgkdbot";
     const inviteHandler = () => {
-        if (!tgUser) { showModal("يجب فتح التطبيق من داخل تيليجرام.", "error"); return; }
+        if (!tg) { showModal("هذه الميزة تعمل فقط داخل تيليجرام.", "warning"); return; }
         const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
         hasSharedToday = true;
         showModal("شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.", "success"  );
@@ -123,12 +126,15 @@ function bindPageSpecificEvents() {
     if (goToWithdrawBtn) goToWithdrawBtn.onclick = () => window.location.href = 'withdraw.html';
 
     const supportBtn = document.getElementById('support-btn');
-    if (supportBtn) supportBtn.onclick = () => tg.openTelegramLink('https://t.me/YourSupportUsername' );
+    if (supportBtn) supportBtn.onclick = () => {
+        if (!tg) { showModal("هذه الميزة تعمل فقط داخل تيليجرام.", "warning"); return; }
+        tg.openTelegramLink('https://t.me/YourSupportUsername' );
+    };
 
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.onclick = () => {
-            tg.showConfirm("هل أنت متأكد أنك تريد تسجيل الخروج؟", async (confirmed) => {
+            const confirmAction = async (confirmed) => {
                 if (confirmed) {
                     try {
                         await auth.signOut();
@@ -136,7 +142,14 @@ function bindPageSpecificEvents() {
                         setTimeout(() => window.location.reload(), 2000);
                     } catch (error) { showModal("فشل تسجيل الخروج.", "error"); }
                 }
-            });
+            };
+            if (tg) {
+                tg.showConfirm("هل أنت متأكد أنك تريد تسجيل الخروج؟", confirmAction);
+            } else {
+                if (confirm("هل أنت متأكد أنك تريد تسجيل الخروج؟")) {
+                    confirmAction(true);
+                }
+            }
         };
     }
 
