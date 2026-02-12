@@ -4,14 +4,13 @@ tg.ready();
 tg.expand();
 const tgUser = tg.initDataUnsafe?.user;
 
-// ================= FIREBASE (الطريقة الكلاسيكية) =================
-// تعريف المتغيرات من الكائن العام firebase الذي تم تحميله في HTML
-const { initializeApp } = firebase;
-const { getAuth, signInAnonymously, signOut } = firebase.auth;
-const { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp } = firebase.firestore;
+// ================= FIREBASE (باستخدام type="module") =================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
-const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig );
 const db = getFirestore(app);
 const auth = getAuth(app);
 
@@ -39,21 +38,32 @@ function showModal(message, type = 'success') {
 if (modalCloseBtn) { modalCloseBtn.onclick = () => modalOverlay.classList.remove('show'); }
 
 // ================= APP ENTRY POINT =================
-async function startApp() {
+async function main() {
     try {
         const userCredential = await signInAnonymously(auth);
         userId = userCredential.user.uid;
         userRef = doc(db, "users", userId);
+
         await initUser();
-        setupLiveListenersAndBindEvents();
+
+        onSnapshot(userRef, (snap) => {
+            if (!snap.exists()) return;
+            currentUserData = snap.data();
+            updateUI(currentUserData);
+        });
+
+        bindGlobalEvents();
+        bindPageSpecificEvents();
+
     } catch (error) {
-        console.error("Authentication or Initialization Error: ", error);
-        showModal("خطأ في الاتصال بالخادم. الرجاء إعادة تحميل الصفحة.", "error");
+        console.error("Critical Error:", error);
+        showModal("خطأ حرج في الاتصال. الرجاء المحاولة مرة أخرى.", "error");
     }
 }
-startApp();
+main();
 
-// ================= INIT USER =================
+// ================= FUNCTIONS =================
+
 async function initUser() {
   const snap = await getDoc(userRef);
   if (!snap.exists()) {
@@ -66,26 +76,16 @@ async function initUser() {
   }
 }
 
-// ================= CORE FUNCTION (Data Listener & Event Binding) =================
-function setupLiveListenersAndBindEvents() {
-    onSnapshot(userRef, (snap) => {
-        if (!snap.exists()) return;
-        currentUserData = snap.data();
-        updateUI(currentUserData);
-        bindPageSpecificEvents();
-    });
-}
-
-// ================= UI UPDATER =================
 function updateUI(data) {
-    // تحديث عناصر الصفحة الرئيسية
     updateElement("username", data.username);
     updateElement("user-initial", data.username.charAt(0).toUpperCase());
     updateElement("balance", Number(data.usdt).toFixed(2));
     updateElement("local-coin", Number(data.localCoin).toFixed(1));
     updateElement("tasks-completed", data.tasksCompleted);
+    updateElement("referrals", data.referrals);
+    updateElement("level", `LV.${data.level}`);
+    updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
     
-    // تحديث عناصر صفحة الملف الشخصي
     updateElement("profile-username", data.username);
     updateElement("profile-user-initial", data.username.charAt(0).toUpperCase());
     updateElement("profile-user-id-display", data.telegramId);
@@ -93,9 +93,6 @@ function updateUI(data) {
     updateElement("profile-local-coin", Number(data.localCoin).toFixed(1));
     updateElement("profile-referrals", data.referrals);
 
-    // تحديث العناصر المشتركة
-    updateElement("level", `LV.${data.level}`);
-    updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
     const progress = (data.usdt % 100);
     const levelProgressEl = document.getElementById("level-progress");
     if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
@@ -110,8 +107,7 @@ function updateElement(id, value) {
   if (el) el.innerText = value;
 }
 
-// ================= EVENT BINDING =================
-function bindPageSpecificEvents() {
+function bindGlobalEvents() {
     const botUsername = "gdkmgkdbot";
     const inviteHandler = () => {
         if (!tgUser) { showModal("يجب فتح التطبيق من داخل تيليجرام.", "error"); return; }
@@ -121,12 +117,14 @@ function bindPageSpecificEvents() {
         tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent("انضم إلى هذا البوت الرائع!")}`);
     };
     document.querySelectorAll(".invite-btn").forEach(btn => { btn.onclick = inviteHandler; });
+}
 
+function bindPageSpecificEvents() {
     const goToWithdrawBtn = document.getElementById('go-to-withdraw-btn');
     if (goToWithdrawBtn) goToWithdrawBtn.onclick = () => window.location.href = 'withdraw.html';
 
     const supportBtn = document.getElementById('support-btn');
-    if (supportBtn) supportBtn.onclick = () => tg.openTelegramLink('https://t.me/YourSupportUsername' ); // استبدل بمعرف الدعم الخاص بك
+    if (supportBtn) supportBtn.onclick = () => tg.openTelegramLink('https://t.me/YourSupportUsername' );
 
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
@@ -167,7 +165,6 @@ function bindPageSpecificEvents() {
                 showModal("✅ تم إرسال طلب السحب بنجاح!", "success");
                 amountInput.value = ""; walletInput.value = "";
             } catch (error) {
-                console.error("Withdrawal Error:", error);
                 showModal("حدث خطأ أثناء إرسال الطلب.", "error");
             } finally {
                 withdrawBtn.disabled = false;
@@ -192,7 +189,6 @@ function bindPageSpecificEvents() {
     }
 }
 
-// ================= DAILY CHECK-IN TIMER (SAFE VERSION) =================
 let canCheckin = false;
 let countdownInterval;
 function startCountdown(lastCheckin) {
@@ -222,7 +218,6 @@ function startCountdown(lastCheckin) {
   countdownInterval = setInterval(updateTimer, 1000);
 }
 
-// ================= LEADERBOARD =================
 async function fetchLeaderboard() {
     const leaderboardList = document.getElementById("leaderboard-list");
     if (!leaderboardList) return;
@@ -250,7 +245,6 @@ async function fetchLeaderboard() {
     }
 }
 
-// ================= HELPERS =================
 function stringToColor(str) {
   if (!str) return '#8b949e';
   let hash = 0; str.split('').forEach(char => { hash = char.charCodeAt(0) + ((hash << 5) - hash); });
