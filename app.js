@@ -6,7 +6,7 @@ const tgUser = tg.initDataUnsafe?.user;
 
 // ================= FIREBASE =================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
@@ -42,40 +42,28 @@ if (modalCloseBtn) {
     };
 }
 
-// ================= APP INITIALIZATION (نقطة البداية الجديدة) =================
+// ================= APP INITIALIZATION =================
 async function startApp() {
     try {
-        // 1. المصادقة أولاً وقبل كل شيء
         const userCredential = await signInAnonymously(auth);
         const user = userCredential.user;
         userId = user.uid;
         userRef = doc(db, "users", userId);
-
-        // 2. تهيئة المستخدم (هذه الخطوة مشتركة لكل الصفحات)
         await initUser();
-        
-        // 3. تشغيل الوظائف بناءً على الصفحة الحالية
         route();
-
     } catch (error) {
         console.error("Firebase Authentication Error: ", error);
         showModal("حدث خطأ في الاتصال بالخادم. الرجاء إعادة تحميل الصفحة.", "error");
     }
 }
-startApp(); // بدء تشغيل التطبيق
+startApp();
 
-// ================= ROUTER (الموجه الجديد) =================
+// ================= ROUTER =================
 function route() {
     const path = window.location.pathname;
-
-    // دوال تعمل على كل الصفحات
     setupLiveListeners();
-    setupInviteButtons(); // أزرار الدعوة قد تكون في أكثر من صفحة
-
-    // دوال تعمل حسب الصفحة
-    if (path.includes('index.html') || path === '/') {
-        // لا يوجد دوال خاصة بالصفحة الرئيسية حالياً
-    } else if (path.includes('profile.html')) {
+    setupInviteButtons();
+    if (path.includes('profile.html') || path.endsWith('/')) { // Added check for root path
         setupNavigation();
     } else if (path.includes('withdraw.html')) {
         setupWithdrawalSystem();
@@ -100,12 +88,9 @@ async function initUser() {
 
 // ================= LIVE DATA (GLOBAL) =================
 function setupLiveListeners() {
-    // هذا المستمع يجب أن يعمل في كل الصفحات لتحديث البيانات المشتركة
     onSnapshot(userRef, (snap) => {
         if (!snap.exists()) return;
         currentUserData = snap.data();
-        
-        // تحديث العناصر المشتركة بين الصفحات (إذا وجدت)
         updateElement("username", currentUserData.username);
         updateElement("user-initial", currentUserData.username.charAt(0).toUpperCase());
         updateElement("user-id-display", currentUserData.telegramId);
@@ -115,14 +100,10 @@ function setupLiveListeners() {
         updateElement("referrals", currentUserData.referrals);
         updateElement("level", `LV.${currentUserData.level}`);
         updateElement("streak-info", `إجمالي ${currentUserData.streak || 0} يوم | تسلسل ${currentUserData.streak || 0} يوم`);
-        
         const progress = (currentUserData.usdt % 100);
         const levelProgressEl = document.getElementById("level-progress");
         if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
-        
         if (currentUserData.banned) { showModal("حسابك محظور", "error"); tg.close(); }
-        
-        // تشغيل العداد فقط إذا كان العنصر موجوداً في الصفحة
         if (document.getElementById("countdown")) {
             startCountdown(currentUserData.lastCheckin);
         }
@@ -198,6 +179,33 @@ function setupNavigation() {
     if (goToWithdrawBtn) {
         goToWithdrawBtn.onclick = () => {
             window.location.href = 'withdraw.html';
+        };
+    }
+
+    const supportBtn = document.getElementById('support-btn');
+    if (supportBtn) {
+        supportBtn.onclick = () => {
+            tg.openTelegramLink('https://t.me/YourSupportUsername' ); // غير هذا الرابط
+        };
+    }
+
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.onclick = () => {
+            tg.showConfirm("هل أنت متأكد أنك تريد تسجيل الخروج؟", async (confirmed) => {
+                if (confirmed) {
+                    try {
+                        await signOut(auth);
+                        showModal("تم تسجيل الخروج بنجاح. سيتم إعادة تشغيل التطبيق.", "success");
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } catch (error) {
+                        console.error("Sign out error", error);
+                        showModal("فشل تسجيل الخروج. الرجاء المحاولة مرة أخرى.", "error");
+                    }
+                }
+            });
         };
     }
 }
