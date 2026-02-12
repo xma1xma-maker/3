@@ -1,13 +1,8 @@
 // ================= TELEGRAM =================
 const tg = window.Telegram.WebApp;
-tg.ready();
+tg.ready( );
 tg.expand();
 const tgUser = tg.initDataUnsafe?.user;
-
-// ================= FIREBASE (تعريف المتغيرات في النطاق العام) =================
-const { initializeApp } = firebase;
-const { getAuth, signInAnonymously, signOut } = firebase.auth;
-const { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp } = firebase.firestore;
 
 // ================= GLOBAL STATE =================
 let db, auth;
@@ -37,18 +32,20 @@ if (modalCloseBtn) { modalCloseBtn.onclick = () => modalOverlay.classList.remove
 async function main() {
     try {
         const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
-        const app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        auth = getAuth(app);
+        
+        // استخدام الطريقة المتوافقة (Compatibility Mode)
+        firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        db = firebase.firestore();
 
-        const userCredential = await signInAnonymously(auth);
+        const userCredential = await auth.signInAnonymously();
         userId = userCredential.user.uid;
-        userRef = doc(db, "users", userId);
+        userRef = db.collection("users").doc(userId);
 
         await initUser();
 
-        onSnapshot(userRef, (snap) => {
-            if (!snap.exists()) return;
+        userRef.onSnapshot((snap) => {
+            if (!snap.exists) return;
             currentUserData = snap.data();
             updateUI(currentUserData);
         });
@@ -65,21 +62,15 @@ async function main() {
 // ================= FUNCTIONS =================
 
 async function initUser() {
-  const snap = await getDoc(userRef);
-  if (!snap.exists()) {
-    await setDoc(userRef, {
+  const snap = await userRef.get();
+  if (!snap.exists) {
+    await userRef.set({
         authUid: userId, 
         telegramId: tgUser ? String(tgUser.id) : "TEST_USER",
         username: tgUser?.username || tgUser?.first_name || "Test User",
-        usdt: 0, 
-        localCoin: 0, 
-        level: 1, 
-        tasksCompleted: 0, 
-        referrals: 0,
-        banned: false, 
-        lastCheckin: null, 
-        streak: 0, 
-        createdAt: serverTimestamp() // Use serverTimestamp for consistency
+        usdt: 0, localCoin: 0, level: 1, tasksCompleted: 0, referrals: 0,
+        banned: false, lastCheckin: null, streak: 0, 
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }
 }
@@ -140,7 +131,7 @@ function bindPageSpecificEvents() {
             tg.showConfirm("هل أنت متأكد أنك تريد تسجيل الخروج؟", async (confirmed) => {
                 if (confirmed) {
                     try {
-                        await signOut(auth);
+                        await auth.signOut();
                         showModal("تم تسجيل الخروج بنجاح.", "success");
                         setTimeout(() => window.location.reload(), 2000);
                     } catch (error) { showModal("فشل تسجيل الخروج.", "error"); }
@@ -165,11 +156,11 @@ function bindPageSpecificEvents() {
 
             withdrawBtn.disabled = true; withdrawBtn.innerText = "الرجاء الانتظار...";
             try {
-                await addDoc(collection(db, "withdrawals"), {
+                await db.collection("withdrawals").add({
                     userId: userId, username: currentUserData.username, amount: amount, wallet: wallet,
-                    status: "pending", createdAt: serverTimestamp()
+                    status: "pending", createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                await updateDoc(userRef, { usdt: increment(-amount) });
+                await userRef.update({ usdt: firebase.firestore.FieldValue.increment(-amount) });
                 showModal("✅ تم إرسال طلب السحب بنجاح!", "success");
                 amountInput.value = ""; walletInput.value = "";
             } catch (error) {
@@ -186,7 +177,11 @@ function bindPageSpecificEvents() {
         checkinBtn.onclick = async () => {
             if (!canCheckin) { showModal("لم تمر 24 ساعة.", "warning"); return; }
             if (!hasSharedToday) { showModal("شارك أولاً للحصول على المكافأة.", "warning"); return; }
-            await updateDoc(userRef, { usdt: increment(0.1), lastCheckin: new Date(), streak: increment(1) });
+            await userRef.update({ 
+                usdt: firebase.firestore.FieldValue.increment(0.1), 
+                lastCheckin: new Date(), 
+                streak: firebase.firestore.FieldValue.increment(1) 
+            });
             hasSharedToday = false;
             showModal("🎉 حصلت على 0.1 USDT!", "success");
         };
@@ -231,8 +226,7 @@ async function fetchLeaderboard() {
     if (!leaderboardList) return;
     leaderboardList.innerHTML = `<p style="color: #f7931a; text-align: center; padding: 20px;">جاري جلب المتصدرين...</p>`;
     try {
-        const q = query(collection(db, "users"), orderBy("usdt", "desc"), limit(20));
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await db.collection("users").orderBy("usdt", "desc").limit(20).get();
         if (querySnapshot.empty) {
             leaderboardList.innerHTML = `<p style="color: #8b949e; text-align: center; padding: 20px;">لا يوجد متصدرون بعد.</p>`;
             return;
