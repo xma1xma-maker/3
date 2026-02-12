@@ -16,18 +16,54 @@
     <!-- Tasks List -->
     <div class="tasks-list">
         <h3 class="section-title">🚀 مهام أساسية</h3>
+        
         <div class="task-item">
             <div class="task-info">
                 <div class="task-icon"><i class="ri-telegram-line"></i></div>
                 <div>
                     <h4>انضم إلى قناة BTC WIN</h4>
-                    <small class="task-reward"><i class="ri-copper-coin-line"></i> 0.2+ <i class="ri-wallet-3-line"></i> 0.02+</small>
+                    <small class="task-reward">
+                        <i class="ri-copper-coin-line"></i> 0.2+
+                        <i class="ri-wallet-3-line"></i> 0.02+
+                    </small>
                 </div>
             </div>
-            <a href="https://t.me/BTCWIN_Official" target="_blank" class="task-button"><i class="ri-arrow-right-s-line"></i></a>
+            <a href="https://t.me/BTCWIN_Official" target="_blank" class="task-button">
+                <i class="ri-arrow-right-s-line"></i>
+            </a>
+        </div>
+        <div class="task-item">
+            <div class="task-info">
+                <div class="task-icon"><i class="ri-twitter-x-line"></i></div>
+                <div>
+                    <h4>تابعنا على X (تويتر )</h4>
+                    <small class="task-reward">
+                        <i class="ri-copper-coin-line"></i> 0.3+
+                    </small>
+                </div>
+            </div>
+            <a href="#" class="task-button">
+                <i class="ri-arrow-right-s-line"></i>
+            </a>
+        </div>
+        <h3 class="section-title" style="margin-top: 40px;">🌟 مهام إضافية</h3>
+        <div class="task-item">
+            <div class="task-info">
+                <div class="task-icon"><i class="ri-user-add-line"></i></div>
+                <div>
+                    <h4>قم بدعوة 3 أصدقاء</h4>
+                    <small class="task-reward">
+                        <i class="ri-wallet-3-line"></i> 0.5+
+                    </small>
+                </div>
+            </div>
+            <button class="task-button" disabled>
+                <i class="ri-check-line"></i>
+            </button>
         </div>
     </div>
   </div>
+
   <!-- Bottom Nav -->
   <nav>
     <a href="index.html"><i class="ri-home-5-line"></i><span>الرئيسية</span></a>
@@ -45,6 +81,12 @@
     </div>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <!-- Firebase (الطريقة الكلاسيكية المضمونة) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+
+  <!-- ملف التطبيق الخاص بنا (بدون type="module" ) -->
+  <script src="app.js"></script>
 </body>
 </html>
