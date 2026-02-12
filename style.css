@@ -111,6 +111,7 @@ header .level {
 .stat-item {
   padding: 15px;
   text-align: center;
+  cursor: pointer;
 }
 
 .stat-item i {
