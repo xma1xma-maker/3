@@ -75,32 +75,26 @@ function setupLiveListenersAndBindEvents() {
     });
 }
 
-// ================= UI UPDATER (النسخة المحدثة) =================
+// ================= UI UPDATER =================
 function updateUI(data) {
-    // تحديث عناصر الصفحة الرئيسية
     updateElement("username", data.username);
     updateElement("user-initial", data.username.charAt(0).toUpperCase());
-    updateElement("balance", Number(data.usdt).toFixed(2));
-    updateElement("local-coin", Number(data.localCoin).toFixed(1));
-    updateElement("tasks-completed", data.tasksCompleted);
-    updateElement("level", `LV.${data.level}`);
-    updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
-    
-    // *** تحديث عناصر صفحة الملف الشخصي (باستخدام الـ IDs الجديدة) ***
     updateElement("profile-username", data.username);
     updateElement("profile-user-initial", data.username.charAt(0).toUpperCase());
     updateElement("profile-user-id-display", data.telegramId);
+    updateElement("balance", Number(data.usdt).toFixed(2));
     updateElement("profile-balance", Number(data.usdt).toFixed(2));
+    updateElement("local-coin", Number(data.localCoin).toFixed(1));
     updateElement("profile-local-coin", Number(data.localCoin).toFixed(1));
+    updateElement("tasks-completed", data.tasksCompleted);
+    updateElement("referrals", data.referrals);
     updateElement("profile-referrals", data.referrals);
-
-    // تحديث العناصر المشتركة
+    updateElement("level", `LV.${data.level}`);
+    updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
     const progress = (data.usdt % 100);
     const levelProgressEl = document.getElementById("level-progress");
     if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
-    
     if (data.banned) { showModal("حسابك محظور", "error"); tg.close(); }
-    
     startCountdown(data.lastCheckin);
 }
 
@@ -220,22 +214,37 @@ function startCountdown(lastCheckin) {
   countdownInterval = setInterval(updateTimer, 1000);
 }
 
-// ================= LEADERBOARD =================
+// ================= LEADERBOARD (WITH DIAGNOSTIC MESSAGE) =================
 async function fetchLeaderboard() {
     const leaderboardList = document.getElementById("leaderboard-list");
     if (!leaderboardList) return;
-    const q = query(collection(db, "users"), orderBy("usdt", "desc"), limit(20));
-    const querySnapshot = await getDocs(q);
-    leaderboardList.innerHTML = "";
-    let rank = 1;
-    querySnapshot.forEach((docSnap) => {
-        const userData = docSnap.data();
-        const item = document.createElement("div");
-        item.className = "leaderboard-item";
-        item.innerHTML = `<div class="rank">${rank}</div><div class="avatar" style="background-color: ${stringToColor(userData.username)}"><span>${userData.username.charAt(0).toUpperCase()}</span></div><div class="user-info"><h4>${userData.username}</h4><small>LV. ${userData.level}</small></div><div class="user-score"><span>${Number(userData.usdt).toFixed(2)}</span><i class="ri-wallet-3-line"></i></div>`;
-        leaderboardList.appendChild(item);
-        rank++;
-    });
+
+    // *** هذه هي الرسالة التشخيصية ***
+    leaderboardList.innerHTML = `<p style="color: #f7931a; text-align: center; padding: 20px;">جاري جلب المتصدرين من Firebase...</p>`;
+
+    try {
+        const q = query(collection(db, "users"), orderBy("usdt", "desc"), limit(20));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            leaderboardList.innerHTML = `<p style="color: #8b949e; text-align: center; padding: 20px;">لا يوجد متصدرون بعد. كن أولهم!</p>`;
+            return;
+        }
+
+        leaderboardList.innerHTML = "";
+        let rank = 1;
+        querySnapshot.forEach((docSnap) => {
+            const userData = docSnap.data();
+            const item = document.createElement("div");
+            item.className = "leaderboard-item";
+            item.innerHTML = `<div class="rank">${rank}</div><div class="avatar" style="background-color: ${stringToColor(userData.username)}"><span>${userData.username.charAt(0).toUpperCase()}</span></div><div class="user-info"><h4>${userData.username}</h4><small>LV. ${userData.level}</small></div><div class="user-score"><span>${Number(userData.usdt).toFixed(2)}</span><i class="ri-wallet-3-line"></i></div>`;
+            leaderboardList.appendChild(item);
+            rank++;
+        });
+    } catch (error) {
+        console.error("Error fetching leaderboard:", error);
+        leaderboardList.innerHTML = `<p style="color: #f44336; text-align: center; padding: 20px;">حدث خطأ أثناء جلب البيانات: ${error.message}</p>`;
+    }
 }
 
 // ================= HELPERS =================
