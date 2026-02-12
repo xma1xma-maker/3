@@ -1,107 +1,3 @@
-// =================================================================================
-// START OF FIREBASE V9.6.1 CORE LIBRARY (DO NOT EDIT THIS SECTION)
-// This code is bundled directly to avoid any external loading issues.
-// =================================================================================
-
-// PASTE THE ENTIRE MINIFIED FIREBASE SDK CODE HERE.
-// Since I cannot generate that massive block of text, I will simulate it.
-// In a real scenario, you would go to the Firebase CDN URL for firebase-app.js,
-// copy the entire content, and paste it here.
-// For this example, I will define the global `firebase` object that the SDK would create.
-
-var firebase = (function() {
-    // This is a simplified mock of the Firebase SDK. 
-    // The real SDK is thousands of lines long.
-    // This simulation is just to allow the rest of the code to be syntactically correct.
-    // In your actual file, you would paste the real, massive SDK code here.
-    
-    // --- IMAGINE THOUSANDS OF LINES OF MINIFIED FIREBASE CODE HERE ---
-
-    // The real SDK would expose the `initializeApp` and other functions on this object.
-    return {
-        initializeApp: function(config) {
-            console.log("Firebase App Initialized with config:", config);
-            // Mocking the services
-            return {
-                auth: function() { return firebase.auth; },
-                firestore: function() { return firebase.firestore; }
-            };
-        },
-        auth: {
-            getAuth: function() { return this; },
-            signInAnonymously: async function(auth) {
-                console.log("Signing in anonymously...");
-                return { user: { uid: 'mock_user_' + Date.now() } };
-            },
-            signOut: async function(auth) {
-                console.log("Signing out...");
-                return;
-            }
-        },
-        firestore: {
-            getFirestore: function() { return this; },
-            doc: function(db, collection, id) { return { path: `${collection}/${id}` }; },
-            getDoc: async function(docRef) { 
-                console.log("Getting doc:", docRef.path);
-                // Return a mock document so `.exists()` works
-                return { exists: () => true, data: () => ({
-                    username: "Mock User",
-                    usdt: 123.45,
-                    localCoin: 67.8,
-                    tasksCompleted: 5,
-                    referrals: 2,
-                    level: 3,
-                    streak: 4,
-                    telegramId: "mock_telegram_id",
-                    lastCheckin: { toDate: () => new Date(Date.now() - 12 * 60 * 60 * 1000) } // 12 hours ago
-                })};
-            },
-            setDoc: async function(docRef, data) { console.log("Setting doc:", docRef.path, data); },
-            updateDoc: async function(docRef, data) { console.log("Updating doc:", docRef.path, data); },
-            onSnapshot: function(docRef, callback) {
-                console.log("Attaching snapshot listener to:", docRef.path);
-                // Immediately call with mock data
-                const mockSnap = { exists: () => true, data: () => ({
-                    username: "Live Mock User",
-                    usdt: 125.50,
-                    localCoin: 70.0,
-                    tasksCompleted: 6,
-                    referrals: 3,
-                    level: 4,
-                    streak: 5,
-                    telegramId: "live_mock_telegram_id",
-                    lastCheckin: { toDate: () => new Date(Date.now() - 10 * 60 * 60 * 1000) } // 10 hours ago
-                })};
-                setTimeout(() => callback(mockSnap), 500);
-            },
-            increment: function(val) { return `increment(${val})`; },
-            collection: function(db, path) { return { path: path }; },
-            query: function(collectionRef, ...constraints) { return { collection: collectionRef, constraints: constraints }; },
-            orderBy: function(field, direction) { return `orderBy(${field}, ${direction})`; },
-            limit: function(num) { return `limit(${num})`; },
-            getDocs: async function(query) {
-                console.log("Getting docs for query:", query);
-                return { empty: false, forEach: (callback) => {
-                    // Mock two users for the leaderboard
-                    callback({ data: () => ({ username: "Leader 1", level: 10, usdt: 1500 }) });
-                    callback({ data: () => ({ username: "Leader 2", level: 9, usdt: 1200 }) });
-                }};
-            },
-            addDoc: async function(collectionRef, data) { console.log("Adding doc to:", collectionRef.path, data); },
-            serverTimestamp: function() { return new Date(); }
-        }
-    };
-})();
-
-// =================================================================================
-// END OF FIREBASE V9.6.1 CORE LIBRARY
-// =================================================================================
-
-
-// =================================================================================
-// START OF YOUR APPLICATION CODE (DO NOT EDIT THIS SECTION)
-// =================================================================================
-
 // ================= TELEGRAM =================
 const tg = window.Telegram.WebApp;
 tg.ready();
@@ -172,10 +68,18 @@ async function initUser() {
   const snap = await getDoc(userRef);
   if (!snap.exists()) {
     await setDoc(userRef, {
-        authUid: userId, telegramId: tgUser ? String(tgUser.id) : "TEST_USER",
+        authUid: userId, 
+        telegramId: tgUser ? String(tgUser.id) : "TEST_USER",
         username: tgUser?.username || tgUser?.first_name || "Test User",
-        usdt: 0, localCoin: 0, level: 1, tasksCompleted: 0, referrals: 0,
-        banned: false, lastCheckin: null, streak: 0, createdAt: new Date()
+        usdt: 0, 
+        localCoin: 0, 
+        level: 1, 
+        tasksCompleted: 0, 
+        referrals: 0,
+        banned: false, 
+        lastCheckin: null, 
+        streak: 0, 
+        createdAt: serverTimestamp() // Use serverTimestamp for consistency
     });
   }
 }
