@@ -4,13 +4,14 @@ tg.ready();
 tg.expand();
 const tgUser = tg.initDataUnsafe?.user;
 
-// ================= FIREBASE =================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInAnonymously, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// ================= FIREBASE (الطريقة الكلاسيكية) =================
+// تعريف المتغيرات من الكائن العام firebase الذي تم تحميله في HTML
+const { initializeApp } = firebase;
+const { getAuth, signInAnonymously, signOut } = firebase.auth;
+const { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot, increment, collection, query, orderBy, limit, getDocs, addDoc, serverTimestamp } = firebase.firestore;
 
 const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
-const app = initializeApp(firebaseConfig );
+const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
@@ -77,24 +78,30 @@ function setupLiveListenersAndBindEvents() {
 
 // ================= UI UPDATER =================
 function updateUI(data) {
+    // تحديث عناصر الصفحة الرئيسية
     updateElement("username", data.username);
     updateElement("user-initial", data.username.charAt(0).toUpperCase());
+    updateElement("balance", Number(data.usdt).toFixed(2));
+    updateElement("local-coin", Number(data.localCoin).toFixed(1));
+    updateElement("tasks-completed", data.tasksCompleted);
+    
+    // تحديث عناصر صفحة الملف الشخصي
     updateElement("profile-username", data.username);
     updateElement("profile-user-initial", data.username.charAt(0).toUpperCase());
     updateElement("profile-user-id-display", data.telegramId);
-    updateElement("balance", Number(data.usdt).toFixed(2));
     updateElement("profile-balance", Number(data.usdt).toFixed(2));
-    updateElement("local-coin", Number(data.localCoin).toFixed(1));
     updateElement("profile-local-coin", Number(data.localCoin).toFixed(1));
-    updateElement("tasks-completed", data.tasksCompleted);
-    updateElement("referrals", data.referrals);
     updateElement("profile-referrals", data.referrals);
+
+    // تحديث العناصر المشتركة
     updateElement("level", `LV.${data.level}`);
     updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
     const progress = (data.usdt % 100);
     const levelProgressEl = document.getElementById("level-progress");
     if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
+    
     if (data.banned) { showModal("حسابك محظور", "error"); tg.close(); }
+    
     startCountdown(data.lastCheckin);
 }
 
@@ -119,7 +126,7 @@ function bindPageSpecificEvents() {
     if (goToWithdrawBtn) goToWithdrawBtn.onclick = () => window.location.href = 'withdraw.html';
 
     const supportBtn = document.getElementById('support-btn');
-    if (supportBtn) supportBtn.onclick = () => tg.openTelegramLink('https://t.me/YourSupportUsername' );
+    if (supportBtn) supportBtn.onclick = () => tg.openTelegramLink('https://t.me/YourSupportUsername' ); // استبدل بمعرف الدعم الخاص بك
 
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
@@ -160,6 +167,7 @@ function bindPageSpecificEvents() {
                 showModal("✅ تم إرسال طلب السحب بنجاح!", "success");
                 amountInput.value = ""; walletInput.value = "";
             } catch (error) {
+                console.error("Withdrawal Error:", error);
                 showModal("حدث خطأ أثناء إرسال الطلب.", "error");
             } finally {
                 withdrawBtn.disabled = false;
@@ -214,23 +222,18 @@ function startCountdown(lastCheckin) {
   countdownInterval = setInterval(updateTimer, 1000);
 }
 
-// ================= LEADERBOARD (WITH DIAGNOSTIC MESSAGE) =================
+// ================= LEADERBOARD =================
 async function fetchLeaderboard() {
     const leaderboardList = document.getElementById("leaderboard-list");
     if (!leaderboardList) return;
-
-    // *** هذه هي الرسالة التشخيصية ***
-    leaderboardList.innerHTML = `<p style="color: #f7931a; text-align: center; padding: 20px;">جاري جلب المتصدرين من Firebase...</p>`;
-
+    leaderboardList.innerHTML = `<p style="color: #f7931a; text-align: center; padding: 20px;">جاري جلب المتصدرين...</p>`;
     try {
         const q = query(collection(db, "users"), orderBy("usdt", "desc"), limit(20));
         const querySnapshot = await getDocs(q);
-        
         if (querySnapshot.empty) {
-            leaderboardList.innerHTML = `<p style="color: #8b949e; text-align: center; padding: 20px;">لا يوجد متصدرون بعد. كن أولهم!</p>`;
+            leaderboardList.innerHTML = `<p style="color: #8b949e; text-align: center; padding: 20px;">لا يوجد متصدرون بعد.</p>`;
             return;
         }
-
         leaderboardList.innerHTML = "";
         let rank = 1;
         querySnapshot.forEach((docSnap) => {
@@ -243,7 +246,7 @@ async function fetchLeaderboard() {
         });
     } catch (error) {
         console.error("Error fetching leaderboard:", error);
-        leaderboardList.innerHTML = `<p style="color: #f44336; text-align: center; padding: 20px;">حدث خطأ أثناء جلب البيانات: ${error.message}</p>`;
+        leaderboardList.innerHTML = `<p style="color: #f44336; text-align: center; padding: 20px;">حدث خطأ: ${error.message}</p>`;
     }
 }
 
