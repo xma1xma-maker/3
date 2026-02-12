@@ -4,107 +4,113 @@
   <meta charset="UTF-8" />
   <title>BTC WIN</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <!-- Header -->
-    <header>
-      <div class="profile-snippet">
-          <div class="avatar">
-              <span id="user-initial">U</span>
-          </div>
-          <div>
-              <h1 id="username">Username</h1>
-              <div class="level-bar">
-                  <span>مبتدئ</span>
-                  <div class="progress-bar">
-                      <div class="progress" id="level-progress" style="width: 30%;"></div>
-                  </div>
-                  <div class="level" id="level">LV.1</div>
-              </div>
-          </div>
-      </div>
-    </header>
-
-    <!-- Stats Grid -->
-    <div class="stats-grid">
-      <div class="stat-item">
-        <i class="ri-check-double-line"></i>
-        <b id="tasks-completed">0</b>
-        <span>مكتمل</span>
-      </div>
-      <div class="stat-item">
-        <i class="ri-copper-coin-line"></i>
-        <b id="local-coin">0.0</b>
-        <span>BTC Coin</span>
-      </div>
-      <div class="stat-item">
-        <i class="ri-wallet-3-line"></i>
-        <b id="balance">0.00</b>
-        <span>USDT</span>
-      </div>
+<div class="container">
+  <!-- Header -->
+  <header>
+    <div class="profile-snippet">
+        <div class="avatar">
+            <span id="user-initial">U</span>
+        </div>
+        <div>
+            <h1 id="username">Username</h1>
+            <div class="level-bar">
+                <span>مبتدئ</span>
+                <div class="progress-bar">
+                    <div class="progress" id="level-progress" style="width: 30%;"></div>
+                </div>
+                <div class="level" id="level">LV.1</div>
+            </div>
+        </div>
     </div>
+  </header>
 
-    <!-- Daily Check-in -->
-    <div class="card-action">
-      <div>
-        <h4>تسجيل الحضور اليومي</h4>
-        <small id="streak-info">إجمالي 0 يوم | تسلسل 0 يوم</small>
-      </div>
-      <button id="checkin-btn" class="checkin-btn">
-          <i class="ri-gift-2-line"></i>
-          <span id="countdown">التحقق...</span>
-      </button>
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-item">
+      <i class="ri-check-double-line"></i>
+      <b id="tasks-completed">0</b>
+      <span>مكتمل</span>
     </div>
-
-    <!-- Invite Button -->
-    <div class="card-action invite-btn">
-      <div>
-        <h4>دعوة الأصدقاء</h4>
-        <small>احصل على مكافآت إضافية</small>
-      </div>
-      <i class="ri-arrow-left-s-line"></i>
+    <div class="stat-item">
+      <i class="ri-copper-coin-line"></i>
+      <b id="local-coin">0.0</b>
+      <span>BTC Coin</span>
     </div>
-
-    <!-- Hot Tasks -->
-    <h3 class="section-title">🔥 المهام الساخنة</h3>
-    <div class="task-item">
-      <div class="task-info">
-          <div class="task-icon"><i class="ri-telegram-line"></i></div>
-          <div>
-              <h4>انضم إلى قناة BTC WIN</h4>
-              <small class="task-reward">
-                  <i class="ri-copper-coin-line"></i> 0.2+
-                  <i class="ri-wallet-3-line"></i> 0.02+
-              </small>
-          </div>
-      </div>
-      <a href="https://t.me/BTCWIN_Official" target="_blank" class="task-button">
-          <i class="ri-arrow-right-s-line"></i>
-      </a>
+    <div class="stat-item">
+      <i class="ri-wallet-3-line"></i>
+      <b id="balance">0.00</b>
+      <span>USDT</span>
     </div>
   </div>
 
-  <!-- Bottom Nav -->
-  <nav>
-    <a href="index.html" class="active"><i class="ri-home-5-fill"></i><span>الرئيسية</span></a>
-    <a href="tasks.html"><i class="ri-task-line"></i><span>المهام</span></a>
-    <a href="leaderboard.html"><i class="ri-trophy-line"></i><span>التصنيف</span></a>
-    <a href="profile.html"><i class="ri-user-3-line"></i><span>الشخصي</span></a>
-  </nav>
-
-  <!-- Custom Modal -->
-  <div id="custom-modal" class="modal-overlay">
-    <div class="modal-content">
-      <i id="modal-icon" class="ri-checkbox-circle-fill"></i>
-      <p id="modal-message">هذه هي رسالتك.</p>
-      <button id="modal-close-btn">حسناً</button>
+  <!-- Daily Check-in -->
+  <div class="card-action">
+    <div>
+      <h4>تسجيل الحضور اليومي</h4>
+      <small id="streak-info">إجمالي 0 يوم | تسلسل 0 يوم</small>
     </div>
+    <button id="checkin-btn" class="checkin-btn">
+        <i class="ri-gift-2-line"></i>
+        <span id="countdown">التحقق...</span>
+    </button>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <!-- Invite Button -->
+  <div class="card-action invite-btn">
+    <div>
+      <h4>دعوة الأصدقاء</h4>
+      <small>احصل على مكافآت إضافية</small>
+    </div>
+    <i class="ri-arrow-left-s-line"></i>
+  </div>
+
+  <!-- Hot Tasks -->
+  <h3 class="section-title">🔥 المهام الساخنة</h3>
+  <div class="task-item">
+    <div class="task-info">
+        <div class="task-icon"><i class="ri-telegram-line"></i></div>
+        <div>
+            <h4>انضم إلى قناة BTC WIN</h4>
+            <small class="task-reward">
+                <i class="ri-copper-coin-line"></i> 0.2+
+                <i class="ri-wallet-3-line"></i> 0.02+
+            </small>
+        </div>
+    </div>
+    <a href="https://t.me/BTCWIN_Official" target="_blank" class="task-button">
+        <i class="ri-arrow-right-s-line"></i>
+    </a>
+  </div>
+
+</div>
+
+<!-- Bottom Nav -->
+<nav>
+  <a href="index.html" class="active"><i class="ri-home-5-fill"></i><span>الرئيسية</span></a>
+  <a href="tasks.html"><i class="ri-task-line"></i><span>المهام</span></a>
+  <a href="leaderboard.html"><i class="ri-trophy-line"></i><span>التصنيف</span></a>
+  <a href="profile.html"><i class="ri-user-3-line"></i><span>الشخصي</span></a>
+</nav>
+
+<!-- Custom Modal -->
+<div id="custom-modal" class="modal-overlay">
+  <div class="modal-content">
+    <i id="modal-icon" class="ri-checkbox-circle-fill"></i>
+    <p id="modal-message">هذه هي رسالتك.</p>
+    <button id="modal-close-btn">حسناً</button>
+  </div>
+</div>
+
+<!-- Firebase (الطريقة الكلاسيكية المضمونة ) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+
+<!-- ملف التطبيق الخاص بنا (بدون type="module" ) -->
+<script src="app.js"></script>
 </body>
 </html>
