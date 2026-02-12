@@ -50,7 +50,7 @@ async function startApp() {
         userId = user.uid;
         userRef = doc(db, "users", userId);
         await initUser();
-        route();
+        route(); // توجيه التطبيق بعد المصادقة وتهيئة المستخدم
     } catch (error) {
         console.error("Firebase Authentication Error: ", error);
         showModal("حدث خطأ في الاتصال بالخادم. الرجاء إعادة تحميل الصفحة.", "error");
@@ -58,12 +58,16 @@ async function startApp() {
 }
 startApp();
 
-// ================= ROUTER =================
+// ================= ROUTER (الموجه المصحح) =================
 function route() {
     const path = window.location.pathname;
+
+    // هذه الدوال يجب أن تعمل في كل الصفحات
     setupLiveListeners();
     setupInviteButtons();
-    if (path.includes('profile.html') || path.endsWith('/')) { // Added check for root path
+
+    // هذه الدوال تعمل فقط في صفحات محددة
+    if (path.includes('profile.html')) {
         setupNavigation();
     } else if (path.includes('withdraw.html')) {
         setupWithdrawalSystem();
@@ -86,11 +90,14 @@ async function initUser() {
   }
 }
 
-// ================= LIVE DATA (GLOBAL) =================
+// ================= LIVE DATA (GLOBAL) (المستمع الشامل) =================
 function setupLiveListeners() {
     onSnapshot(userRef, (snap) => {
         if (!snap.exists()) return;
         currentUserData = snap.data();
+        
+        // تحديث جميع العناصر الممكنة في أي صفحة
+        // الدالة updateElement آمنة ولن تسبب خطأ إذا لم تجد العنصر
         updateElement("username", currentUserData.username);
         updateElement("user-initial", currentUserData.username.charAt(0).toUpperCase());
         updateElement("user-id-display", currentUserData.telegramId);
@@ -100,10 +107,17 @@ function setupLiveListeners() {
         updateElement("referrals", currentUserData.referrals);
         updateElement("level", `LV.${currentUserData.level}`);
         updateElement("streak-info", `إجمالي ${currentUserData.streak || 0} يوم | تسلسل ${currentUserData.streak || 0} يوم`);
+        
         const progress = (currentUserData.usdt % 100);
         const levelProgressEl = document.getElementById("level-progress");
         if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
-        if (currentUserData.banned) { showModal("حسابك محظور", "error"); tg.close(); }
+        
+        if (currentUserData.banned) { 
+            showModal("حسابك محظور", "error"); 
+            tg.close(); 
+        }
+        
+        // تشغيل عداد الحضور اليومي فقط إذا كان موجوداً في الصفحة
         if (document.getElementById("countdown")) {
             startCountdown(currentUserData.lastCheckin);
         }
@@ -112,7 +126,9 @@ function setupLiveListeners() {
 
 function updateElement(id, value) {
   const el = document.getElementById(id);
-  if (el) el.innerText = value;
+  if (el) {
+      el.innerText = value;
+  }
 }
 
 // ================= DAILY CHECK-IN =================
