@@ -44,10 +44,7 @@ async function startApp() {
         userId = userCredential.user.uid;
         userRef = doc(db, "users", userId);
         await initUser();
-        
-        // المستمع الذي يملأ البيانات ويفعّل كل شيء بعد وصول البيانات
         setupLiveListenersAndBindEvents();
-
     } catch (error) {
         console.error("Authentication or Initialization Error: ", error);
         showModal("خطأ في الاتصال بالخادم. الرجاء إعادة تحميل الصفحة.", "error");
@@ -73,12 +70,7 @@ function setupLiveListenersAndBindEvents() {
     onSnapshot(userRef, (snap) => {
         if (!snap.exists()) return;
         currentUserData = snap.data();
-        
-        // 1. تحديث واجهة المستخدم بالبيانات الجديدة
         updateUI(currentUserData);
-        
-        // 2. تفعيل الأزرار والوظائف التي تعتمد على البيانات
-        // يتم استدعاؤها هنا لضمان أن currentUserData متاح دائماً
         bindPageSpecificEvents();
     });
 }
@@ -101,9 +93,7 @@ function updateUI(data) {
     
     if (data.banned) { showModal("حسابك محظور", "error"); tg.close(); }
     
-    if (document.getElementById("countdown")) {
-        startCountdown(data.lastCheckin);
-    }
+    startCountdown(data.lastCheckin);
 }
 
 function updateElement(id, value) {
@@ -111,11 +101,8 @@ function updateElement(id, value) {
   if (el) el.innerText = value;
 }
 
-// ================= EVENT BINDING (تفعيل الأزرار) =================
+// ================= EVENT BINDING =================
 function bindPageSpecificEvents() {
-    // تفعيل كل الأزرار الممكنة، الكود سيجدها فقط في الصفحات الصحيحة
-    
-    // --- أزرار الدعوة (في كل الصفحات) ---
     const botUsername = "gdkmgkdbot";
     const inviteHandler = () => {
         if (!tgUser) { showModal("يجب فتح التطبيق من داخل تيليجرام.", "error"); return; }
@@ -126,7 +113,6 @@ function bindPageSpecificEvents() {
     };
     document.querySelectorAll(".invite-btn").forEach(btn => { btn.onclick = inviteHandler; });
 
-    // --- أزرار صفحة الملف الشخصي ---
     const goToWithdrawBtn = document.getElementById('go-to-withdraw-btn');
     if (goToWithdrawBtn) goToWithdrawBtn.onclick = () => window.location.href = 'withdraw.html';
 
@@ -142,15 +128,12 @@ function bindPageSpecificEvents() {
                         await signOut(auth);
                         showModal("تم تسجيل الخروج بنجاح.", "success");
                         setTimeout(() => window.location.reload(), 2000);
-                    } catch (error) {
-                        showModal("فشل تسجيل الخروج.", "error");
-                    }
+                    } catch (error) { showModal("فشل تسجيل الخروج.", "error"); }
                 }
             });
         };
     }
 
-    // --- زر السحب في صفحة السحب ---
     const withdrawBtn = document.getElementById('withdraw-btn');
     if (withdrawBtn) {
         withdrawBtn.onclick = async () => {
@@ -177,13 +160,11 @@ function bindPageSpecificEvents() {
             } catch (error) {
                 showModal("حدث خطأ أثناء إرسال الطلب.", "error");
             } finally {
-                withdrawBtn.disabled = false;
-                withdrawBtn.innerText = "إرسال طلب السحب";
+                withdrawBtn.disabled = false; withdrawBtn.innerText = "إرسال طلب السحب";
             }
         };
     }
     
-    // --- زر تسجيل الحضور اليومي ---
     const checkinBtn = document.getElementById("checkin-btn");
     if (checkinBtn) {
         checkinBtn.onclick = async () => {
@@ -195,21 +176,24 @@ function bindPageSpecificEvents() {
         };
     }
     
-    // --- جلب بيانات لوحة الصدارة (فقط في صفحتها) ---
     if (document.getElementById("leaderboard-list")) {
         fetchLeaderboard();
     }
 }
 
-// ================= DAILY CHECK-IN TIMER =================
+// ================= DAILY CHECK-IN TIMER (SAFE VERSION) =================
 let canCheckin = false;
-let countdownInterval; // تعريف المتغير هنا
+let countdownInterval;
 function startCountdown(lastCheckin) {
   const countdownEl = document.getElementById("countdown");
   const checkinBtnEl = document.getElementById("checkin-btn");
-  if (!countdownEl || !checkinBtnEl) return;
   
-  clearInterval(countdownInterval); // إيقاف أي عداد سابق
+  // *** هذا هو التصحيح: لا تفعل شيئاً إذا كانت العناصر غير موجودة ***
+  if (!countdownEl || !checkinBtnEl) {
+    return;
+  }
+  
+  clearInterval(countdownInterval);
 
   const nextTime = lastCheckin ? new Date(lastCheckin.toDate().getTime() + 24 * 60 * 60 * 1000) : new Date();
   
@@ -220,7 +204,7 @@ function startCountdown(lastCheckin) {
       canCheckin = true;
       countdownEl.innerText = "تسجيل الحضور";
       checkinBtnEl.disabled = false;
-      clearInterval(countdownInterval); // إيقاف العداد عند الانتهاء
+      clearInterval(countdownInterval);
       return;
     }
     canCheckin = false;
