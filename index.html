@@ -26,17 +26,22 @@
             <main class="main-content">
                 <div class="top-bar">
                     <div class="bar-item" id="go-to-league-page"><i class="ri-trophy-line"></i><span id="league-name">برونزي</span></div>
-                    <div class="bar-item" id="go-to-team-page"><i class="ri-group-line"></i><span>فريق</span></div>
                 </div>
                 <div class="balance-display">
                     <img src="https://i.ibb.co/bF09yv1/cyber-coin.png" alt="coin" class="coin-icon"/>
                     <h1 id="local-coin">0</h1>
                 </div>
                 <div class="clicker-zone">
-                    <div id="clicker-button" class="clicker-button"><img src="https://i.ibb.co/d2z11Hw/cyber-logo.png" alt="logo"/></div>
+                    <!--  UPDATED: Using a GIF for the clicker button -->
+                    <div id="clicker-button" class="clicker-button">
+                        <img src="https://i.ibb.co/bQdY00z/cyber-orb.gif" alt="Clicker Orb"/>
+                    </div>
                 </div>
                 <div class="bottom-bar">
-                    <div class="energy-section"><i class="ri-flashlight-fill"></i><span id="energy-level">1000</span>/1000</div>
+                    <div class="energy-section">
+                        <i class="ri-flashlight-fill"></i>
+                        <span id="energy-level">100</span> / 100
+                    </div>
                 </div>
             </main>
         </div>
@@ -44,9 +49,7 @@
         <!-- ================= EARN PAGE (TASKS ) ================= -->
         <div class="page" id="earn-page">
             <div class="page-header"><h3>اكسب النقاط</h3></div>
-            <div class="content-container" id="tasks-list-container">
-                <!-- Task items will be injected here by app.js -->
-            </div>
+            <div class="content-container" id="tasks-list-container"></div>
         </div>
 
         <!-- ================= FRIENDS PAGE ================= -->
@@ -85,6 +88,14 @@
                     <div class="form-group"><label for="gift-code-input">أدخل الكود هنا</label><input type="text" id="gift-code-input" placeholder="XXXX-XXXX"></div>
                     <button class="btn-submit" id="redeem-gift-code-btn">تفعيل الكود</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- ================= MINE PAGE (FIXED) ================= -->
+        <div class="page" id="mine-page">
+            <div class="page-header"><h3>تعدين</h3></div>
+            <div class="content-container">
+                <p style="text-align: center; color: var(--text-muted);">صفحة التعدين قيد التطوير...</p>
             </div>
         </div>
 
