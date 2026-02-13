@@ -23,7 +23,9 @@ const modalCloseBtn = document.getElementById('modal-close-btn');
 function showModal(message, type = 'success') {
     if (!modalOverlay) return;
     const icons = { success: 'ri-checkbox-circle-fill', warning: 'ri-error-warning-fill', error: 'ri-close-circle-fill' };
-    modalContent.className = `modal-content ${type}`;
+    modalContent.className = `modal-content`; // Reset class
+    void modalContent.offsetWidth; // Trigger reflow
+    modalContent.classList.add('modal-content', type);
     modalIcon.className = icons[type];
     modalMessage.innerText = message;
     modalOverlay.classList.add('show');
@@ -43,7 +45,7 @@ function setupNavigation() {
             link.classList.add('active');
             updateNavIcons(pageId);
             if (pageId === 'leaderboard-page') fetchLeaderboard();
-            if (pageId === 'tasks-page') fetchAndDisplayTasks(); // جلب المهام عند فتح الصفحة
+            if (pageId === 'tasks-page') fetchAndDisplayTasks();
         });
     });
     const goToWithdrawBtn = document.getElementById('go-to-withdraw-btn');
@@ -114,7 +116,7 @@ async function initUser(tgUser) {
             usdt: 0, localCoin: 0, level: 1, tasksCompleted: 0, referrals: 0,
             banned: false, lastCheckin: null, streak: 0,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            completedTasks: [] // إضافة مصفوفة فارغة لتتبع المهام المكتملة
+            completedTasks: []
         });
     }
 }
@@ -175,7 +177,7 @@ async function handleClaimReward() {
         showModal("لم تمر 24 ساعة بعد.", "warning");
         return;
     }
-    const btn = this;
+    const btn = document.getElementById('claim-reward-btn');
     btn.disabled = true;
     try {
         await userRef.update({
@@ -243,6 +245,13 @@ async function fetchAndDisplayTasks() {
     const container = document.getElementById('tasks-list-container');
     if (!container || !db || !currentUserData) return;
 
+    if (container.innerHTML === '' || container.querySelector('.empty-message')) {
+        container.innerHTML = `
+            <div class="task-item-placeholder"><div class="icon-placeholder"></div><div class="text-placeholder"></div></div>
+            <div class="task-item-placeholder"><div class="icon-placeholder"></div><div class="text-placeholder"></div></div>
+        `;
+    }
+
     try {
         const tasksSnapshot = await db.collection('tasks').orderBy('createdAt', 'desc').get();
         container.innerHTML = '';
@@ -257,12 +266,21 @@ async function fetchAndDisplayTasks() {
             const taskId = doc.id;
             const isCompleted = currentUserData.completedTasks?.includes(taskId);
 
+            let iconClass = 'ri-star-smile-line';
+            if (task.link && task.link.includes('t.me')) {
+                iconClass = 'ri-telegram-line';
+            } else if (task.link && (task.link.includes('twitter.com') || task.link.includes('x.com'))) {
+                iconClass = 'ri-twitter-x-line';
+            }
+
             const taskItem = document.createElement('div');
             taskItem.className = 'task-item';
             if (isCompleted) taskItem.classList.add('completed');
 
             taskItem.innerHTML = `
-                <div class="task-icon"><i class="ri-star-smile-line"></i></div>
+                <div class="task-icon">
+                    <i class="${isCompleted ? 'ri-check-double-line' : iconClass}"></i>
+                </div>
                 <div class="task-details">
                     <h4>${task.title}</h4>
                     <p>+${task.reward} USDT</p>
