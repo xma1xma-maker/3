@@ -31,9 +31,68 @@ function showModal(message, type = 'success') {
 }
 if (modalCloseBtn) { modalCloseBtn.onclick = () => modalOverlay.classList.remove('show'); }
 
+// ================= SPA NAVIGATION =================
+function setupNavigation() {
+    const navLinks = document.querySelectorAll('.nav-link');
+    const pages = document.querySelectorAll('.page');
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const pageId = link.getAttribute('data-page');
+
+            pages.forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+
+            navLinks.forEach(navLink => navLink.classList.remove('active'));
+            link.classList.add('active');
+            
+            // تحديث أيقونات شريط التنقل
+            updateNavIcons(pageId);
+
+            // إذا انتقلنا إلى صفحة المتصدرين، قم بتحديث القائمة
+            if (pageId === 'leaderboard-page') {
+                fetchLeaderboard();
+            }
+        });
+    });
+    
+    // زر الانتقال إلى صفحة السحب من صفحة الملف الشخصي
+    const goToWithdrawBtn = document.getElementById('go-to-withdraw-btn');
+    if (goToWithdrawBtn) {
+        goToWithdrawBtn.onclick = () => {
+            pages.forEach(page => page.classList.remove('active'));
+            document.getElementById('withdraw-page').classList.add('active');
+            // لا نغير حالة شريط التنقل هنا لأن صفحة السحب ليست فيه
+        };
+    }
+}
+
+function updateNavIcons(activePageId) {
+    const navLinks = document.querySelectorAll('.nav-link');
+    const iconMapping = {
+        'home-page': 'ri-home-5',
+        'tasks-page': 'ri-task',
+        'leaderboard-page': 'ri-trophy',
+        'profile-page': 'ri-user-3'
+    };
+
+    navLinks.forEach(link => {
+        const pageId = link.getAttribute('data-page');
+        const icon = link.querySelector('i');
+        const baseIcon = iconMapping[pageId];
+        if (baseIcon) {
+            icon.className = `${baseIcon}-${pageId === activePageId ? 'fill' : 'line'}`;
+        }
+    });
+}
+
+
 // ================= APP ENTRY POINT =================
 async function main() {
     try {
+        setupNavigation(); // إعداد التنقل أولاً
+
         const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
         
         firebase.initializeApp(firebaseConfig);
@@ -46,8 +105,7 @@ async function main() {
 
         if (!tgUser) {
             showModal("يجب فتح التطبيق من داخل تيليجرام فقط.", "error");
-            const container = document.querySelector('.container');
-            if (container) container.style.display = 'none';
+            document.body.innerHTML = ''; // مسح كل شيء في حالة عدم وجود مستخدم
             return;
         }
 
@@ -131,9 +189,6 @@ function bindGlobalEvents() {
 }
 
 function bindPageSpecificEvents() {
-    const goToWithdrawBtn = document.getElementById('go-to-withdraw-btn');
-    if (goToWithdrawBtn) goToWithdrawBtn.onclick = () => window.location.href = 'withdraw.html';
-
     const supportBtn = document.getElementById('support-btn');
     if (supportBtn) supportBtn.onclick = () => tg.openTelegramLink('https://t.me/YourSupportUsername' );
 
@@ -204,10 +259,6 @@ function bindPageSpecificEvents() {
                 checkinBtn.disabled = false;
             }
         };
-    }
-    
-    if (document.getElementById("leaderboard-list")) {
-        fetchLeaderboard();
     }
 }
 
