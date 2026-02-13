@@ -9,7 +9,7 @@ if (tg) {
 let db, auth;
 let userId = null;
 let userRef = null;
-let hasSharedToday = false;
+// ❌ تم حذف hasSharedToday لأنه لم يعد مطلوباً
 let currentUserData = null;
 let canCheckin = false;
 let countdownInterval;
@@ -109,14 +109,15 @@ async function main() {
 
         await initUser(tgUser);
 
+        // 🔥 الإصلاح: ربط الأحداث مرة واحدة فقط بعد تهيئة المستخدم
+        bindGlobalEvents();
+        bindPageSpecificEvents();
+
         userRef.onSnapshot((snap) => {
             if (!snap.exists) return;
             currentUserData = snap.data();
             updateUI(currentUserData);
         });
-
-        bindGlobalEvents();
-        bindPageSpecificEvents(); // Bind events that might need currentUserData
 
     } catch (error) {
         console.error("Critical Error:", error);
@@ -161,12 +162,12 @@ function updateUI(data) {
     const levelProgressEl = document.getElementById("level-progress");
     if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
     
-    // Update streak days in the new reward modal
     updateElement("streak-days", data.streak || 0);
     
     if (data.banned) { showModal("حسابك محظور", "error"); if (tg) tg.close(); }
     
     startCountdown(data.lastCheckin);
+    // ❌ تم حذف استدعاء bindPageSpecificEvents() من هنا لمنع تكرار ربط الأحداث
 }
 
 function updateElement(id, value) {
@@ -178,13 +179,12 @@ function bindGlobalEvents() {
     const botUsername = "gdkmgkdbot";
     const inviteHandler = () => {
         const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
-        hasSharedToday = true;
-        showModal("شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.", "success"  );
+        // لم نعد بحاجة لتغيير hasSharedToday، لكن يمكن إبقاء الرسالة للمستخدم
+        showModal("شكراً لمشاركتك رابط الدعوة!", "success"  );
         tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent("انضم إلى هذا البوت الرائع!")}`);
     };
     document.querySelectorAll(".invite-btn").forEach(btn => { btn.onclick = inviteHandler; });
 
-    // Bind events for the new daily reward modal
     const dailyRewardIcon = document.getElementById('daily-reward-icon');
     const rewardModal = document.getElementById('daily-reward-modal');
     const rewardModalCloseBtn = document.getElementById('reward-modal-close-btn');
@@ -252,7 +252,9 @@ function bindPageSpecificEvents() {
     if (claimRewardBtn) {
         claimRewardBtn.onclick = async () => {
             if (!canCheckin) { showModal("لم تمر 24 ساعة.", "warning"); return; }
-            if (!hasSharedToday) { showModal("شارك أولاً للحصول على المكافأة.", "warning"); return; }
+            
+            // ❌ تم حذف شرط المشاركة من هنا
+            // if (!hasSharedToday) { showModal("شارك أولاً للحصول على المكافأة.", "warning"); return; }
             
             try {
                 claimRewardBtn.disabled = true;
@@ -262,9 +264,9 @@ function bindPageSpecificEvents() {
                     streak: firebase.firestore.FieldValue.increment(1) 
                 });
                 showModal("🎉 حصلت على 0.1 USDT!", "success");
-                hasSharedToday = false;
                 document.getElementById('daily-reward-modal').classList.remove('show');
             } catch (error) {
+                console.error("Claim Reward Error:", error); // طباعة الخطأ في الكونسول للمساعدة
                 showModal("حدث خطأ ما. حاول مرة أخرى.", "error");
                 claimRewardBtn.disabled = false;
             }
@@ -313,6 +315,8 @@ function startCountdown(lastCheckin) {
 async function fetchLeaderboard() {
     const leaderboardList = document.getElementById("leaderboard-list");
     if (!leaderboardList) return;
+    if (leaderboardList.children.length > 1 && !leaderboardList.querySelector('p')) return; // Don't refetch if already populated
+
     leaderboardList.innerHTML = `<p style="color: #f7931a; text-align: center; padding: 20px;">جاري جلب المتصدرين...</p>`;
     try {
         const querySnapshot = await db.collection("users").orderBy("usdt", "desc").limit(20).get();
