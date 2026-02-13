@@ -9,7 +9,7 @@ if (tg) {
 
 let db, auth, functions;
 let userId = null, userRef = null, currentUserData = null;
-let dailyCountdownInterval, energyRegenInterval;
+let dailyCountdownInterval, hourlyCountdownInterval, energyRegenInterval;
 
 const MAX_ENERGY = 100;
 const ENERGY_REGEN_RATE = 20000; // 20 seconds
@@ -53,7 +53,6 @@ async function main() {
         await initUser(tg?.initDataUnsafe?.user);
         bindAllEvents();
 
-        // The onSnapshot listener is now the SINGLE SOURCE OF TRUTH for UI updates.
         userRef.onSnapshot((snap) => {
             if (snap.exists) {
                 currentUserData = snap.data();
@@ -77,15 +76,15 @@ async function initUser(tgUser) {
             username: tgUser?.username || tgUser?.first_name || 'New User',
             usdt: 0, localCoin: 0, league: 'برونزي', referrals: 0,
             lastCheckin: null, streak: 0, 
+            lastHourlyClaim: null, // For the new Mine page feature
             clickerEnergy: MAX_ENERGY,
             lastEnergyUpdate: firebase.firestore.FieldValue.serverTimestamp(),
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             completedTasks: [], redeemedCodes: []
-        });
+        }, { merge: true }); // Use merge to avoid overwriting existing fields on re-init
     }
 }
 
-// This function ONLY updates the screen based on data from Firebase. No logic here.
 function updateUI(data) {
     if (!data) return;
     const username = data.username || 'User';
@@ -99,16 +98,83 @@ function updateUI(data) {
     updateElement('points-balance', Math.floor(data.localCoin));
     updateElement('referral-count', data.referrals || 0);
     startDailyCountdown(data.lastCheckin);
-    // The energy regeneration is now smarter and handled by a Cloud Function (or a more robust client-side timer).
+    startHourlyCountdown(data.lastHourlyClaim); // Activate hourly countdown
+    startEnergyRegen();
+}
+
+// ================= ENERGY & COUNTDOWN FUNCTIONS =================
+function startEnergyRegen() {
+    clearInterval(energyRegenInterval);
+    if (currentUserData && currentUserData.clickerEnergy < MAX_ENERGY) {
+        energyRegenInterval = setInterval(() => {
+            if (currentUserData && currentUserData.clickerEnergy < MAX_ENERGY) {
+                userRef.update({ clickerEnergy: firebase.firestore.FieldValue.increment(1) }).catch(console.error);
+            } else {
+                clearInterval(energyRegenInterval);
+            }
+        }, ENERGY_REGEN_RATE);
+    }
+}
+
+function startDailyCountdown(lastCheckin) {
+    const el = document.getElementById("reward-countdown");
+    const btn = document.getElementById("claim-reward-btn");
+    if (!el || !btn) return;
+    clearInterval(dailyCountdownInterval);
+    if (!lastCheckin) {
+        el.innerText = "المكافأة جاهزة!";
+        btn.disabled = false;
+        return;
+    }
+    const nextTime = new Date(lastCheckin.toDate().getTime() + 24 * 60 * 60 * 1000);
+    dailyCountdownInterval = setInterval(() => {
+        const diff = nextTime - new Date();
+        if (diff <= 0) {
+            el.innerText = "المكافأة جاهزة!";
+            btn.disabled = false;
+            clearInterval(dailyCountdownInterval);
+            return;
+        }
+        btn.disabled = true;
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        el.innerText = `⏳ ${h}h ${m}m ${s}s`;
+    }, 1000);
+}
+
+function startHourlyCountdown(lastClaim) {
+    const el = document.getElementById("claim-hourly-btn");
+    if (!el) return;
+    clearInterval(hourlyCountdownInterval);
+    if (!lastClaim) {
+        el.innerText = "احصل على 100 نقطة";
+        el.disabled = false;
+        return;
+    }
+    const nextTime = new Date(lastClaim.toDate().getTime() + 60 * 60 * 1000);
+    hourlyCountdownInterval = setInterval(() => {
+        const diff = nextTime - new Date();
+        if (diff <= 0) {
+            el.innerText = "احصل على 100 نقطة";
+            el.disabled = false;
+            clearInterval(hourlyCountdownInterval);
+            return;
+        }
+        el.disabled = true;
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        el.innerText = `جاهزة بعد: ${m} دقيقة و ${s} ثانية`;
+    }, 1000);
 }
 
 // ================= EVENT BINDING =================
 function bindAllEvents() {
     document.getElementById('clicker-button')?.addEventListener('click', handleTap);
-    // ... (rest of the bindings are the same)
     document.getElementById('daily-reward-icon')?.addEventListener('click', () => document.getElementById('daily-reward-modal').classList.add('show'));
     document.querySelector('#daily-reward-modal .modal-close-btn')?.addEventListener('click', () => document.getElementById('daily-reward-modal').classList.remove('show'));
     document.getElementById('claim-reward-btn')?.addEventListener('click', handleClaimDailyReward);
+    document.getElementById('claim-hourly-btn')?.addEventListener('click', handleClaimHourlyReward); // New binding
     document.getElementById('alert-close-btn')?.addEventListener('click', () => document.getElementById('alert-modal').classList.remove('show'));
     document.getElementById('withdraw-btn')?.addEventListener('click', handleWithdraw);
     document.getElementById('redeem-gift-code-btn')?.addEventListener('click', handleRedeemGiftCode);
@@ -119,24 +185,15 @@ function bindAllEvents() {
 }
 
 // ================= EVENT HANDLERS =================
-// REWRITTEN: This function is now much simpler.
 function handleTap(event) {
-    // Check if we can tap based on the latest data.
-    if (!currentUserData || currentUserData.clickerEnergy < 1) {
-        // Optional: Add a "shake" animation to show no energy
-        event.currentTarget.style.animation = 'shake 0.3s';
-        setTimeout(() => { event.currentTarget.style.animation = ''; }, 300);
-        return;
-    }
+    if (!currentUserData || currentUserData.clickerEnergy < 1) return;
     
-    // Perform the click action in Firestore.
-    // This is the ONLY place we write to the database for a tap.
-    userRef.update({
-        localCoin: firebase.firestore.FieldValue.increment(1),
-        clickerEnergy: firebase.firestore.FieldValue.increment(-1)
-    }).catch(console.error);
+    // Optimistic UI update for instant feedback
+    currentUserData.clickerEnergy--;
+    currentUserData.localCoin++;
+    updateElement('energy-level', `${Math.floor(currentUserData.clickerEnergy)} / ${MAX_ENERGY}`);
+    updateElement('local-coin', Math.floor(currentUserData.localCoin));
 
-    // Visual feedback for the click (animation)
     event.currentTarget.style.transform = 'scale(0.95)';
     setTimeout(() => { event.currentTarget.style.transform = 'scale(1)'; }, 100);
     
@@ -147,37 +204,18 @@ function handleTap(event) {
     feedback.style.left = `${event.clientX}px`;
     feedback.style.top = `${event.clientY}px`;
     feedback.addEventListener('animationend', () => feedback.remove());
+    
+    if (window.tapTimeout) clearTimeout(window.tapTimeout);
+    window.tapTimeout = setTimeout(() => {
+        userRef.update({
+            localCoin: firebase.firestore.FieldValue.increment(1),
+            clickerEnergy: firebase.firestore.FieldValue.increment(-1)
+        }).then(() => {
+            if (currentUserData.clickerEnergy === MAX_ENERGY - 1) startEnergyRegen();
+        }).catch(console.error);
+    }, 500);
 }
 
-// --- The energy regeneration is now handled by a separate, robust timer ---
-// This function will be called once when the app starts.
-(function startSmartEnergyRegen() {
-    setInterval(async () => {
-        // Fetch the latest user data directly before updating.
-        const doc = await userRef.get();
-        if (doc.exists) {
-            const data = doc.data();
-            if (data.clickerEnergy < MAX_ENERGY) {
-                // Calculate how much energy should have been generated since the last update.
-                const lastUpdate = data.lastEnergyUpdate.toDate();
-                const now = new Date();
-                const diffSeconds = (now - lastUpdate) / 1000;
-                const energyToRegen = Math.floor(diffSeconds / (ENERGY_REGEN_RATE / 1000));
-
-                if (energyToRegen > 0) {
-                    const newEnergy = Math.min(MAX_ENERGY, data.clickerEnergy + energyToRegen);
-                    userRef.update({
-                        clickerEnergy: newEnergy,
-                        lastEnergyUpdate: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                }
-            }
-        }
-    }, ENERGY_REGEN_RATE); // Check every 20 seconds
-})();
-
-
-// ... (Rest of the functions: handleClaimDailyReward, handleWithdraw, etc. are the same)
 async function handleClaimDailyReward() {
     const btn = document.getElementById('claim-reward-btn');
     if (btn.disabled) return;
@@ -190,6 +228,22 @@ async function handleClaimDailyReward() {
         });
         document.getElementById('daily-reward-modal').classList.remove('show');
         showAlert("تهانينا! لقد حصلت على 500 نقطة.", "success");
+    } catch (error) {
+        showAlert("حدث خطأ ما.", "error");
+        btn.disabled = false;
+    }
+}
+
+async function handleClaimHourlyReward() {
+    const btn = document.getElementById('claim-hourly-btn');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    try {
+        await userRef.update({
+            localCoin: firebase.firestore.FieldValue.increment(100),
+            lastHourlyClaim: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showAlert("تهانينا! لقد حصلت على 100 نقطة.", "success");
     } catch (error) {
         showAlert("حدث خطأ ما.", "error");
         btn.disabled = false;
@@ -249,33 +303,6 @@ function handleInvite() {
     const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
     const shareText = `💰 انضم إلى هذا البوت الرائع واربح مكافآت! 💰\n\n${inviteLink}`;
     tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent(shareText)}`);
-}
-
-function startDailyCountdown(lastCheckin) {
-    const el = document.getElementById("reward-countdown");
-    const btn = document.getElementById("claim-reward-btn");
-    if (!el || !btn) return;
-    clearInterval(dailyCountdownInterval);
-    if (!lastCheckin) {
-        el.innerText = "المكافأة جاهزة!";
-        btn.disabled = false;
-        return;
-    }
-    const nextTime = new Date(lastCheckin.toDate().getTime() + 24 * 60 * 60 * 1000);
-    dailyCountdownInterval = setInterval(() => {
-        const diff = nextTime - new Date();
-        if (diff <= 0) {
-            el.innerText = "المكافأة جاهزة!";
-            btn.disabled = false;
-            clearInterval(dailyCountdownInterval);
-            return;
-        }
-        btn.disabled = true;
-        const h = Math.floor(diff / 3600000);
-        const m = Math.floor((diff % 3600000) / 60000);
-        const s = Math.floor((diff % 60000) / 1000);
-        el.innerText = `⏳ ${h}h ${m}m ${s}s`;
-    }, 1000);
 }
 
 async function fetchAndDisplayTasks() {
