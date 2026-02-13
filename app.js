@@ -42,11 +42,8 @@ function setupNavigation() {
             navLinks.forEach(navLink => navLink.classList.remove('active'));
             link.classList.add('active');
             updateNavIcons(pageId);
-            
-            // 🔥 التعديل: استدعاء fetchLeaderboard بشكل موثوق عند الانتقال للصفحة
-            if (pageId === 'leaderboard-page') {
-                fetchLeaderboard();
-            }
+            if (pageId === 'leaderboard-page') fetchLeaderboard();
+            if (pageId === 'tasks-page') fetchAndDisplayTasks(); // جلب المهام عند فتح الصفحة
         });
     });
     const goToWithdrawBtn = document.getElementById('go-to-withdraw-btn');
@@ -116,7 +113,8 @@ async function initUser(tgUser) {
             username: tgUser?.username || tgUser?.first_name || 'New User',
             usdt: 0, localCoin: 0, level: 1, tasksCompleted: 0, referrals: 0,
             banned: false, lastCheckin: null, streak: 0,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            completedTasks: [] // إضافة مصفوفة فارغة لتتبع المهام المكتملة
         });
     }
 }
@@ -222,7 +220,7 @@ async function handleWithdraw() {
     if (wallet === "") { showModal("الرجاء إدخال عنوان المحفظة.", "warning"); return; }
     if (amount < minWithdrawal) { showModal(`الحد الأدنى للسحب هو ${minWithdrawal} USDT.`, "warning"); return; }
     if (!currentUserData || currentUserData.usdt < amount) { showModal("رصيدك الحالي غير كافٍ.", "error"); return; }
-    const btn = this;
+    const btn = document.getElementById('withdraw-btn');
     btn.disabled = true; btn.innerText = "الرجاء الانتظار...";
     try {
         await db.collection("withdrawals").add({
@@ -237,6 +235,90 @@ async function handleWithdraw() {
     } finally {
         btn.disabled = false; btn.innerText = "إرسال طلب السحب";
     }
+}
+
+// ================= TASKS FUNCTIONS =================
+
+async function fetchAndDisplayTasks() {
+    const container = document.getElementById('tasks-list-container');
+    if (!container || !db || !currentUserData) return;
+
+    try {
+        const tasksSnapshot = await db.collection('tasks').orderBy('createdAt', 'desc').get();
+        container.innerHTML = '';
+
+        if (tasksSnapshot.empty) {
+            container.innerHTML = '<p class="empty-message">لا توجد مهام متاحة حالياً.</p>';
+            return;
+        }
+
+        tasksSnapshot.forEach(doc => {
+            const task = doc.data();
+            const taskId = doc.id;
+            const isCompleted = currentUserData.completedTasks?.includes(taskId);
+
+            const taskItem = document.createElement('div');
+            taskItem.className = 'task-item';
+            if (isCompleted) taskItem.classList.add('completed');
+
+            taskItem.innerHTML = `
+                <div class="task-icon"><i class="ri-star-smile-line"></i></div>
+                <div class="task-details">
+                    <h4>${task.title}</h4>
+                    <p>+${task.reward} USDT</p>
+                </div>
+                <button class="task-action-btn" data-task-id="${taskId}" data-link="${task.link}" data-reward="${task.reward}" ${isCompleted ? 'disabled' : ''}>
+                    ${isCompleted ? 'مكتمل' : 'اذهب'}
+                </button>
+            `;
+            container.appendChild(taskItem);
+        });
+
+        document.querySelectorAll('.task-action-btn:not([disabled])').forEach(btn => {
+            btn.onclick = handleTaskAction;
+        });
+
+    } catch (error) {
+        console.error("Error fetching tasks:", error);
+        container.innerHTML = '<p class="empty-message">حدث خطأ أثناء تحميل المهام.</p>';
+    }
+}
+
+async function handleTaskAction(event) {
+    const btn = event.currentTarget;
+    const taskId = btn.dataset.taskId;
+    const link = btn.dataset.link;
+    const reward = parseFloat(btn.dataset.reward);
+
+    tg.openLink(link);
+
+    btn.disabled = true;
+    btn.innerText = '...';
+
+    setTimeout(() => {
+        tg.showConfirm(`هل أكملت المهمة "${btn.parentElement.querySelector('h4').innerText}"؟`, async (confirmed) => {
+            if (confirmed) {
+                try {
+                    await userRef.update({
+                        usdt: firebase.firestore.FieldValue.increment(reward),
+                        tasksCompleted: firebase.firestore.FieldValue.increment(1),
+                        completedTasks: firebase.firestore.FieldValue.arrayUnion(taskId)
+                    });
+                    showModal(`🎉 رائع! لقد ربحت ${reward} USDT.`, 'success');
+                    btn.innerText = 'مكتمل';
+                    btn.parentElement.classList.add('completed');
+                } catch (error) {
+                    console.error("Error completing task:", error);
+                    showModal('حدث خطأ ما، حاول مرة أخرى.', 'error');
+                    btn.disabled = false;
+                    btn.innerText = 'اذهب';
+                }
+            } else {
+                btn.disabled = false;
+                btn.innerText = 'اذهب';
+            }
+        });
+    }, 5000);
 }
 
 // ================= OTHER FUNCTIONS (Countdown, Leaderboard) =================
@@ -273,43 +355,26 @@ function startCountdown(lastCheckin) {
     countdownInterval = setInterval(updateTimer, 1000);
 }
 
-// 🔥 --- دالة لوحة الصدارة المعدلة --- 🔥
 async function fetchLeaderboard() {
     const leaderboardList = document.getElementById("leaderboard-list");
-    if (!leaderboardList) return;
-
-    // 1. التأكد من وجود اتصال بـ Firebase أولاً
-    if (!db) {
-        console.error("Firestore (db) is not initialized yet.");
-        leaderboardList.innerHTML = `<p style="color: #f44336;">خطأ: لم يتم الاتصال بقاعدة البيانات.</p>`;
-        return;
-    }
-
-    // 2. عرض رسالة "جاري الجلب" دائماً عند استدعاء الدالة
+    if (!leaderboardList || !db) return;
     leaderboardList.innerHTML = `<p style="color: #f7931a; text-align: center; padding: 20px;">جاري جلب المتصدرين...</p>`;
-
     try {
-        // 3. جلب البيانات من Firebase
         const querySnapshot = await db.collection("users").orderBy("usdt", "desc").limit(20).get();
-        
         if (querySnapshot.empty) {
             leaderboardList.innerHTML = `<p style="color: #8b949e; text-align: center; padding: 20px;">لا يوجد متصدرون بعد.</p>`;
             return;
         }
-
-        // 4. مسح القائمة (للتأكد من عدم وجود عناصر قديمة) وبدء العرض
         leaderboardList.innerHTML = "";
         let rank = 1;
         querySnapshot.forEach((docSnap) => {
             const userData = docSnap.data();
             const item = document.createElement("div");
             item.className = "leaderboard-item";
-            // دالة لإنشاء لون فريد لكل مستخدم
             const avatarColor = (str) => {
+                if (!str) return '#888';
                 let hash = 0;
-                for (let i = 0; i < str.length; i++) {
-                    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-                }
+                for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
                 let color = '#';
                 for (let i = 0; i < 3; i++) {
                     const value = (hash >> (i * 8)) & 0xFF;
