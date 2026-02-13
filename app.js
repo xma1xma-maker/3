@@ -39,9 +39,21 @@ async function main() {
         auth = firebase.auth();
         db = firebase.firestore();
 
-        const userCredential = await auth.signInAnonymously();
-        userId = tgUser ? userCredential.user.uid : "BROWSER_TEST_USER";
+        // --- 🔥 الحل الصحيح والنهائي (بناءً على تحليلك الدقيق) 🔥 ---
+        await auth.signInAnonymously();
+
+        if (!tgUser) {
+            showModal("يجب فتح التطبيق من داخل تيليجرام فقط.", "error");
+            // إخفاء المحتوى الرئيسي إذا لم يكن المستخدم في تيليجرام
+            const container = document.querySelector('.container');
+            if (container) container.style.display = 'none';
+            return; // إيقاف تنفيذ الكود بالكامل
+        }
+
+        // 🔥 نجعل معرف المستخدم هو Telegram ID الحقيقي والدائم
+        userId = String(tgUser.id);
         userRef = db.collection("users").doc(userId);
+        // --- نهاية التعديل ---
 
         await initUser();
 
@@ -52,7 +64,6 @@ async function main() {
         });
 
         bindGlobalEvents();
-        bindPageSpecificEvents();
 
     } catch (error) {
         console.error("Critical Error:", error);
@@ -66,9 +77,9 @@ async function initUser() {
   const snap = await userRef.get();
   if (!snap.exists) {
     await userRef.set({
-        authUid: userId, 
-        telegramId: tgUser ? String(tgUser.id) : "BROWSER_TEST_ID",
-        username: tgUser?.username || tgUser?.first_name || "Browser User",
+        // لا حاجة لـ authUid بعد الآن، فـ userId هو Telegram ID
+        telegramId: String(tgUser.id),
+        username: tgUser.username || tgUser.first_name,
         usdt: 0, localCoin: 0, level: 1, tasksCompleted: 0, referrals: 0,
         banned: false, lastCheckin: null, streak: 0, 
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -77,6 +88,7 @@ async function initUser() {
 }
 
 function updateUI(data) {
+    // Update elements on all pages
     updateElement("username", data.username);
     updateElement("user-initial", data.username.charAt(0).toUpperCase());
     updateElement("balance", Number(data.usdt).toFixed(2));
@@ -86,6 +98,7 @@ function updateUI(data) {
     updateElement("level", `LV.${data.level}`);
     updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
     
+    // Update elements specific to the profile page
     updateElement("profile-username", data.username);
     updateElement("profile-user-initial", data.username.charAt(0).toUpperCase());
     updateElement("profile-user-id-display", data.telegramId);
@@ -100,6 +113,7 @@ function updateUI(data) {
     if (data.banned) { showModal("حسابك محظور", "error"); if (tg) tg.close(); }
     
     startCountdown(data.lastCheckin);
+    bindPageSpecificEvents();
 }
 
 function updateElement(id, value) {
@@ -110,8 +124,7 @@ function updateElement(id, value) {
 function bindGlobalEvents() {
     const botUsername = "gdkmgkdbot";
     const inviteHandler = () => {
-        if (!tg) { showModal("هذه الميزة تعمل فقط داخل تيليجرام.", "warning"); return; }
-        const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
+        const inviteLink = `https://t.me/${botUsername}?start=${userId}`; // userId هو الآن Telegram ID
         hasSharedToday = true;
         showModal("شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.", "success"  );
         tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent("انضم إلى هذا البوت الرائع!")}`);
@@ -124,15 +137,12 @@ function bindPageSpecificEvents() {
     if (goToWithdrawBtn) goToWithdrawBtn.onclick = () => window.location.href = 'withdraw.html';
 
     const supportBtn = document.getElementById('support-btn');
-    if (supportBtn) supportBtn.onclick = () => {
-        if (!tg) { showModal("هذه الميزة تعمل فقط داخل تيليجرام.", "warning"); return; }
-        tg.openTelegramLink('https://t.me/YourSupportUsername' );
-    };
+    if (supportBtn) supportBtn.onclick = () => tg.openTelegramLink('https://t.me/YourSupportUsername' );
 
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.onclick = () => {
-            const confirmAction = async (confirmed) => {
+            tg.showConfirm("هل أنت متأكد أنك تريد تسجيل الخروج؟", async (confirmed) => {
                 if (confirmed) {
                     try {
                         await auth.signOut();
@@ -140,14 +150,7 @@ function bindPageSpecificEvents() {
                         setTimeout(() => window.location.reload(), 2000);
                     } catch (error) { showModal("فشل تسجيل الخروج.", "error"); }
                 }
-            };
-            if (tg) {
-                tg.showConfirm("هل أنت متأكد أنك تريد تسجيل الخروج؟", confirmAction);
-            } else {
-                if (confirm("هل أنت متأكد أنك تريد تسجيل الخروج؟")) {
-                    confirmAction(true);
-                }
-            }
+            });
         };
     }
 
@@ -270,5 +273,4 @@ function stringToColor(str) {
 }
 
 // ================= START THE APP =================
-// *** هذا هو السطر الذي كان مفقوداً ***
 main();
