@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Cyber Clicker</title>
-    <!-- EXACT FONT FROM SOURCE -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -31,14 +30,12 @@
                 </div>
 
                 <div class="balance-display">
-                    <!-- EXACT IMAGE FROM SOURCE -->
                     <img src="https://hamster.ton_wallet.uz/images/32/hamster-coin.png" alt="coin" class="coin-icon"/>
                     <h1 id="local-coin">0</h1>
                 </div>
 
                 <div class="clicker-zone">
                     <div id="clicker-button" class="clicker-button">
-                        <!-- EXACT IMAGE FROM SOURCE -->
                         <img src="https://hamster.ton_wallet.uz/images/32/hamster-logo.png" alt="logo"/>
                     </div>
                 </div>
@@ -46,13 +43,16 @@
                 <div class="bottom-bar">
                     <div class="energy-section">
                         <i class="ri-flashlight-fill"></i>
-                        <span id="energy-level">100</span> / 100
+                        <!-- FIXED: Removed the hardcoded "/ 1000" -->
+                        <span id="energy-level">100 / 100</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ================= OTHER PAGES (TASKS, FRIENDS, EXCHANGE, MINE ) ================= -->
+        <!-- ... (Rest of the HTML is identical to the previous version ) ... -->
+        
+        <!-- ================= OTHER PAGES (TASKS, FRIENDS, EXCHANGE, MINE) ================= -->
         <div class="page" id="earn-page">
             <div class="page-header"><h3>اكسب النقاط</h3></div>
             <div class="content-container" id="tasks-list-container"></div>
