@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Cyber Clicker</title>
+    <title>Task Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +14,7 @@
     <div id="loader-overlay" class="loader-overlay"><div class="loader-spinner"></div></div>
 
     <div class="app-container">
-        <!-- ================= HOME PAGE ================= -->
+        <!-- ================= HOME PAGE (NOW A DASHBOARD ) ================= -->
         <div class="page active" id="home-page">
             <div class="main-content">
                 <div class="header">
@@ -25,50 +25,59 @@
                     <div class="icon-box" id="daily-reward-icon"><i class="ri-gift-line"></i></div>
                 </div>
 
-                <div class="top-bar">
-                    <div class="bar-item" id="go-to-league-page"><i class="ri-trophy-line"></i><span id="league-name"></span></div>
-                </div>
-
-                <div class="balance-display">
-                    <img src="https://hamster.ton_wallet.uz/images/32/hamster-coin.png" alt="coin" class="coin-icon"/>
-                    <h1 id="local-coin"></h1>
-                </div>
-
-                <div class="clicker-zone">
-                    <div id="clicker-button" class="clicker-button">
-                        <img src="https://hamster.ton_wallet.uz/images/32/hamster-logo.png" alt="logo"/>
+                <div class="dashboard-hero">
+                    <p>رصيد النقاط</p>
+                    <div class="balance-display">
+                        <img src="https://hamster.ton_wallet.uz/images/32/hamster-coin.png" alt="coin" class="coin-icon"/>
+                        <h1 id="local-coin"></h1>
+                    </div>
+                    <div class="league-display">
+                        <i class="ri-trophy-line"></i>
+                        <span id="league-name"></span>
                     </div>
                 </div>
 
-                <div class="bottom-bar">
-                    <div class="energy-section">
-                        <i class="ri-flashlight-fill"></i>
-                        <span id="energy-level"></span>
+                <div class="quick-actions">
+                    <div class="action-card" data-page="earn-page">
+                        <i class="ri-copper-coin-line"></i>
+                        <span>اكسب النقاط</span>
+                    </div>
+                    <div class="action-card" data-page="friends-page">
+                        <i class="ri-group-line"></i>
+                        <span>ادعُ الأصدقاء</span>
+                    </div>
+                    <div class="action-card" data-page="exchange-page">
+                        <i class="ri-exchange-dollar-line"></i>
+                        <span>تحويل</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ================= MINE PAGE (NOW WORKING ) ================= -->
-        <div class="page" id="mine-page">
-            <div class="page-header"><h3>التعدين</h3></div>
+        <!-- ================= EARN PAGE (WITH URGENT TASKS ) ================= -->
+        <div class="page" id="earn-page">
+            <div class="page-header"><h3>اكسب النقاط</h3></div>
             <div class="content-container">
-                <div class="card">
-                    <h4>مكافأة كل ساعة</h4>
-                    <p>احصل على 100 نقطة كل ساعة مجاناً لزيادة رصيدك.</p>
-                    <button id="claim-hourly-btn" class="btn-submit" disabled>جاري التحميل...</button>
+                <!-- URGENT TASKS SECTION -->
+                <div id="urgent-tasks-section">
+                    <h4>🔥 مهام عاجلة</h4>
+                    <div id="urgent-tasks-container"></div>
                 </div>
-                <div class="card">
-                    <h4>ترقية التعدين (قريباً)</h4>
-                    <p>قريباً ستتمكن من شراء ترقيات تزيد من أرباحك تلقائياً.</p>
+                <!-- REGULAR TASKS SECTION -->
+                <div id="regular-tasks-section">
+                    <h4>المهام اليومية</h4>
+                    <div id="tasks-list-container"></div>
                 </div>
             </div>
         </div>
         
-        <!-- ================= OTHER PAGES ================= -->
-        <div class="page" id="earn-page">
-            <div class="page-header"><h3>اكسب النقاط</h3></div>
-            <div class="content-container" id="tasks-list-container"></div>
+        <!-- ... (Rest of the pages: mine, friends, exchange are the same) ... -->
+        <div class="page" id="mine-page">
+            <div class="page-header"><h3>التعدين</h3></div>
+            <div class="content-container">
+                <div class="card"><h4>مكافأة كل ساعة</h4><p>احصل على 100 نقطة كل ساعة مجاناً لزيادة رصيدك.</p><button id="claim-hourly-btn" class="btn-submit" disabled>جاري التحميل...</button></div>
+                <div class="card"><h4>ترقية التعدين (قريباً)</h4><p>قريباً ستتمكن من شراء ترقيات تزيد من أرباحك تلقائياً.</p></div>
+            </div>
         </div>
         <div class="page" id="friends-page">
             <div class="page-header"><h3>دعوة الأصدقاء</h3></div>
