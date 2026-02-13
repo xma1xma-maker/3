@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>BTC WIN</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
@@ -17,23 +17,23 @@
         <div class="profile-snippet">
             <div class="avatar"><span id="user-initial"></span></div>
             <div>
-                <h1 id="username"></h1>
+                <h1 id="username">Loading...</h1>
                 <div class="level-bar">
                     <span>مبتدئ</span>
                     <div class="progress-bar"><div class="progress" id="level-progress"></div></div>
-                    <div class="level" id="level"></div>
+                    <div class="level" id="level">LV.1</div>
                 </div>
             </div>
         </div>
+        <!-- الأيقونة الجديدة للمكافأة اليومية -->
+        <div id="daily-reward-icon" class="header-icon">
+            <i class="ri-gift-2-fill"></i>
+        </div>
       </header>
       <div class="stats-grid">
-        <div class="stat-item"><i class="ri-check-double-line"></i><b id="tasks-completed"></b><span>مكتمل</span></div>
-        <div class="stat-item"><i class="ri-copper-coin-line"></i><b id="local-coin"></b><span>BTC Coin</span></div>
-        <div class="stat-item"><i class="ri-wallet-3-line"></i><b id="balance"></b><span>USDT</span></div>
-      </div>
-      <div class="card-action">
-        <div><h4>تسجيل الحضور اليومي</h4><small id="streak-info"></small></div>
-        <button id="checkin-btn" class="checkin-btn"><i class="ri-gift-2-line"></i><span id="countdown"></span></button>
+        <div class="stat-item"><i class="ri-check-double-line"></i><b id="tasks-completed">0</b><span>مكتمل</span></div>
+        <div class="stat-item"><i class="ri-copper-coin-line"></i><b id="local-coin">0.0</b><span>BTC Coin</span></div>
+        <div class="stat-item"><i class="ri-wallet-3-line"></i><b id="balance">0.00</b><span>USDT</span></div>
       </div>
       <div class="card-action invite-btn">
         <div><h4>دعوة الأصدقاء</h4><small>احصل على مكافآت إضافية</small></div>
@@ -132,6 +132,23 @@
   </div>
 
   <!-- ======================= Global Elements ======================= -->
+  <div id="daily-reward-modal" class="modal-overlay">
+    <div class="modal-content reward-modal">
+        <button class="modal-close-icon" id="reward-modal-close-btn"><i class="ri-close-line"></i></button>
+        <i class="ri-gift-2-fill reward-icon"></i>
+        <h2>المكافأة اليومية</h2>
+        <p>سجل حضورك يومياً لتربح المكافآت. شارك رابط الدعوة أولاً لتتمكن من المطالبة.</p>
+        <div class="reward-timer-box">
+            <div id="reward-countdown">⏳ 0h 0m 0s</div>
+        </div>
+        <div class="streak-display">
+            <i class="ri-fire-fill"></i>
+            <span>أيام الحضور المتتالي: <b id="streak-days">0</b></span>
+        </div>
+        <button id="claim-reward-btn" class="submit-btn">المطالبة بالمكافأة (0.1 USDT)</button>
+    </div>
+  </div>
+
   <div id="custom-modal" class="modal-overlay">
     <div class="modal-content">
         <i id="modal-icon"></i>
@@ -147,7 +164,6 @@
     <a href="#profile" data-page="profile-page" class="nav-link"><i class="ri-user-3-line"></i><span>الشخصي</span></a>
   </nav>
 
-  <!-- Classic & Reliable Script Loading (Guaranteed Order) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
