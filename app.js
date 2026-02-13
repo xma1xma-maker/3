@@ -11,8 +11,8 @@ let db, auth, functions;
 let userId = null, userRef = null, currentUserData = null;
 let dailyCountdownInterval, energyRegenInterval;
 
-const MAX_ENERGY = 100; // Maximum energy
-const ENERGY_REGEN_RATE = 20000; // 20 seconds in milliseconds
+const MAX_ENERGY = 100;
+const ENERGY_REGEN_RATE = 20000; // 20 seconds
 
 // ================= UI FUNCTIONS =================
 function showLoader(show) {
@@ -124,7 +124,6 @@ function updateUI(data) {
     startEnergyRegen();
 }
 
-// ================= NEW ENERGY REGENERATION SYSTEM =================
 function startEnergyRegen() {
     clearInterval(energyRegenInterval);
     energyRegenInterval = setInterval(() => {
@@ -133,7 +132,6 @@ function startEnergyRegen() {
                 clickerEnergy: firebase.firestore.FieldValue.increment(1)
             }).catch(console.error);
         } else {
-            // Stop the interval if energy is full to save resources
             clearInterval(energyRegenInterval);
         }
     }, ENERGY_REGEN_RATE);
@@ -158,7 +156,6 @@ function bindAllEvents() {
 function handleTap(event) {
     if (!currentUserData || currentUserData.clickerEnergy < 1) return;
     
-    // Optimistic UI update for instant feedback
     currentUserData.clickerEnergy--;
     currentUserData.localCoin++;
     updateElement('energy-level', `${Math.floor(currentUserData.clickerEnergy)} / ${MAX_ENERGY}`);
@@ -175,17 +172,13 @@ function handleTap(event) {
     feedback.style.top = `${event.clientY}px`;
     feedback.addEventListener('animationend', () => feedback.remove());
     
-    // Debounced Firestore update to reduce writes
     if (window.tapTimeout) clearTimeout(window.tapTimeout);
     window.tapTimeout = setTimeout(() => {
         userRef.update({
             localCoin: firebase.firestore.FieldValue.increment(1),
             clickerEnergy: firebase.firestore.FieldValue.increment(-1)
         }).then(() => {
-            // Restart energy regen if it was stopped
-            if (currentUserData.clickerEnergy === MAX_ENERGY - 1) {
-                startEnergyRegen();
-            }
+            if (currentUserData.clickerEnergy === MAX_ENERGY - 1) startEnergyRegen();
         }).catch(console.error);
     }, 500);
 }
@@ -295,7 +288,7 @@ async function fetchAndDisplayTasks() {
     const container = document.getElementById('tasks-list-container');
     container.innerHTML = '<div class="loader-spinner" style="margin: 40px auto;"></div>';
     try {
-        const tasksSnapshot = await db.collection('tasks').get();
+        const tasksSnapshot = await db.collection('tasks').orderBy('createdAt', 'desc').get();
         if (tasksSnapshot.empty) {
             container.innerHTML = '<p style="text-align:center; color:var(--text-muted);">لا توجد مهام حالياً.</p>';
             return;
@@ -341,7 +334,8 @@ async function handleTaskAction(event) {
 
     setTimeout(async () => {
         try {
-            // We assume the user completed the task. For real validation, a server-side check is needed.
+            // For simplicity, we assume the user completed the task.
+            // Real validation would require a more complex server-side check.
             await userRef.update({
                 localCoin: firebase.firestore.FieldValue.increment(taskReward),
                 completedTasks: firebase.firestore.FieldValue.arrayUnion(taskId)
@@ -353,7 +347,7 @@ async function handleTaskAction(event) {
             btn.disabled = false;
             btn.innerText = 'اذهب';
         }
-    }, 5000); // 5 second delay
+    }, 5000); // 5 second delay to simulate user performing the task
 }
 
 // ================= START THE APP =================
