@@ -4,55 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Cyber Clicker</title>
+    <!-- EXACT FONT FROM SOURCE -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet"/>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="background-overlay"></div>
     <div id="loader-overlay" class="loader-overlay"><div class="loader-spinner"></div></div>
 
     <div class="app-container">
         <!-- ================= HOME PAGE ================= -->
         <div class="page active" id="home-page">
-            <header class="header">
-                <div class="user-info">
-                    <div class="avatar" id="user-avatar">U</div>
-                    <span id="username">Username</span>
-                </div>
-                <div class="header-icons">
+            <div class="main-content">
+                <div class="header">
+                    <div class="user-info">
+                        <div class="avatar" id="user-avatar">U</div>
+                        <span id="username">Username</span>
+                    </div>
                     <div class="icon-box" id="daily-reward-icon"><i class="ri-gift-line"></i></div>
                 </div>
-            </header>
-            <main class="main-content">
+
                 <div class="top-bar">
                     <div class="bar-item" id="go-to-league-page"><i class="ri-trophy-line"></i><span id="league-name">برونزي</span></div>
                 </div>
+
                 <div class="balance-display">
-                    <img src="https://i.ibb.co/bF09yv1/cyber-coin.png" alt="coin" class="coin-icon"/>
+                    <!-- EXACT IMAGE FROM SOURCE -->
+                    <img src="https://hamster.ton_wallet.uz/images/32/hamster-coin.png" alt="coin" class="coin-icon"/>
                     <h1 id="local-coin">0</h1>
                 </div>
+
                 <div class="clicker-zone">
-                    <!--  UPDATED: Using a GIF for the clicker button -->
                     <div id="clicker-button" class="clicker-button">
-                        <img src="https://i.ibb.co/bQdY00z/cyber-orb.gif" alt="Clicker Orb"/>
+                        <!-- EXACT IMAGE FROM SOURCE -->
+                        <img src="https://hamster.ton_wallet.uz/images/32/hamster-logo.png" alt="logo"/>
                     </div>
                 </div>
+
                 <div class="bottom-bar">
                     <div class="energy-section">
                         <i class="ri-flashlight-fill"></i>
                         <span id="energy-level">100</span> / 100
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
 
-        <!-- ================= EARN PAGE (TASKS ) ================= -->
+        <!-- ================= OTHER PAGES (TASKS, FRIENDS, EXCHANGE, MINE ) ================= -->
         <div class="page" id="earn-page">
             <div class="page-header"><h3>اكسب النقاط</h3></div>
             <div class="content-container" id="tasks-list-container"></div>
         </div>
-
-        <!-- ================= FRIENDS PAGE ================= -->
         <div class="page" id="friends-page">
             <div class="page-header"><h3>دعوة الأصدقاء</h3></div>
             <div class="content-container">
@@ -61,42 +65,27 @@
                     <p>لكل صديق ينضم عبر رابطك، ستحصل على مكافأة قدرها <strong class="highlight">5000</strong> نقطة.</p>
                     <button class="btn-submit invite-btn"><i class="ri-share-forward-line"></i> مشاركة رابط الدعوة</button>
                 </div>
-                <div class="card">
-                    <h4>إحالاتك</h4>
-                    <p>لقد قمت بدعوة <strong id="referral-count" class="highlight">0</strong> أصدقاء.</p>
-                </div>
+                <div class="card"><h4>إحالاتك</h4><p>لقد قمت بدعوة <strong id="referral-count" class="highlight">0</strong> أصدقاء.</p></div>
             </div>
         </div>
-        
-        <!-- ================= EXCHANGE PAGE (WITHDRAW) ================= -->
         <div class="page" id="exchange-page">
             <div class="page-header"><h3>تحويل وسحب</h3></div>
             <div class="content-container">
-                <div class="card">
-                    <h4>رصيدك الحالي</h4>
-                    <p>USDT: <strong id="usdt-balance" class="highlight">0.00</strong></p>
-                    <p>النقاط: <strong id="points-balance" class="highlight">0</strong></p>
-                </div>
-                <div class="card">
-                    <h4>سحب الأرباح (USDT)</h4>
+                <div class="card"><h4>رصيدك الحالي</h4><p>USDT: <strong id="usdt-balance" class="highlight">0.00</strong> | النقاط: <strong id="points-balance" class="highlight">0</strong></p></div>
+                <div class="card"><h4>سحب الأرباح (USDT)</h4>
                     <div class="form-group"><label for="wallet">عنوان المحفظة (USDT TRC20)</label><input type="text" id="wallet" placeholder="أدخل عنوان محفظتك"></div>
                     <div class="form-group"><label for="amount">المبلغ (USDT)</label><input type="number" id="amount" placeholder="الحد الأدنى 10"></div>
                     <button class="btn-submit" id="withdraw-btn">إرسال طلب السحب</button>
                 </div>
-                 <div class="card">
-                    <h4>كود الهدية</h4>
+                 <div class="card"><h4>كود الهدية</h4>
                     <div class="form-group"><label for="gift-code-input">أدخل الكود هنا</label><input type="text" id="gift-code-input" placeholder="XXXX-XXXX"></div>
                     <button class="btn-submit" id="redeem-gift-code-btn">تفعيل الكود</button>
                 </div>
             </div>
         </div>
-
-        <!-- ================= MINE PAGE (FIXED) ================= -->
         <div class="page" id="mine-page">
             <div class="page-header"><h3>تعدين</h3></div>
-            <div class="content-container">
-                <p style="text-align: center; color: var(--text-muted);">صفحة التعدين قيد التطوير...</p>
-            </div>
+            <div class="content-container"><p style="text-align: center; color: var(--text-muted);">صفحة التعدين قيد التطوير...</p></div>
         </div>
 
         <!-- ================= MODALS ================= -->
@@ -105,19 +94,12 @@
                 <i class="ri-close-line modal-close-btn"></i>
                 <div class="modal-icon-wrapper"><i class="ri-gift-2-fill"></i></div>
                 <h3>المكافأة اليومية</h3><p>سجل حضورك يومياً لتربح مكافآت قيمة.</p>
-                <div class="reward-status">
-                    <div class="streak-info"><i class="ri-calendar-check-line"></i><span><span id="streak-days">0</span> أيام</span></div>
-                    <div id="reward-countdown">⏳ ...</div>
-                </div>
+                <div class="reward-status"><div class="streak-info"><i class="ri-calendar-check-line"></i><span><span id="streak-days">0</span> أيام</span></div><div id="reward-countdown">⏳ ...</div></div>
                 <button id="claim-reward-btn" class="btn-submit" disabled>المطالبة بالمكافأة</button>
             </div>
         </div>
         <div id="alert-modal" class="modal-overlay">
-             <div class="modal-content">
-                <div id="alert-icon" class="modal-icon-wrapper"></div>
-                <p id="alert-message"></p>
-                <button id="alert-close-btn" class="btn-submit">حسناً</button>
-            </div>
+             <div class="modal-content"><div id="alert-icon" class="modal-icon-wrapper"></div><p id="alert-message"></p><button id="alert-close-btn" class="btn-submit">حسناً</button></div>
         </div>
 
         <!-- ================= NAVIGATION ================= -->
