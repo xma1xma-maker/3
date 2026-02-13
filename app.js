@@ -42,7 +42,11 @@ function setupNavigation() {
             navLinks.forEach(navLink => navLink.classList.remove('active'));
             link.classList.add('active');
             updateNavIcons(pageId);
-            if (pageId === 'leaderboard-page') fetchLeaderboard();
+            
+            // 🔥 التعديل: استدعاء fetchLeaderboard بشكل موثوق عند الانتقال للصفحة
+            if (pageId === 'leaderboard-page') {
+                fetchLeaderboard();
+            }
         });
     });
     const goToWithdrawBtn = document.getElementById('go-to-withdraw-btn');
@@ -77,19 +81,15 @@ async function main() {
         const firebaseUser = auth.currentUser;
         if (!firebaseUser) throw new Error("فشل المصادقة مع Firebase.");
 
-        // استخدام معرف Firebase الموثوق
         userId = firebaseUser.uid;
         userRef = db.collection("users").doc(userId);
 
-        // ربط جميع الأحداث مرة واحدة فقط
         setupNavigation();
         bindAllEvents();
 
-        // تهيئة المستخدم أو إنشائه
         const tgUser = tg?.initDataUnsafe?.user;
         await initUser(tgUser);
 
-        // إعداد المستمع للتحديثات الفورية
         userRef.onSnapshot((snap) => {
             if (snap.exists) {
                 currentUserData = snap.data();
@@ -152,18 +152,15 @@ function updateElement(id, value) {
 // ================= EVENT BINDING (ONCE!) =================
 
 function bindAllEvents() {
-    // Reward Modal
     const dailyRewardIcon = document.getElementById('daily-reward-icon');
     const rewardModal = document.getElementById('daily-reward-modal');
     const rewardModalCloseBtn = document.getElementById('reward-modal-close-btn');
     if (dailyRewardIcon) dailyRewardIcon.onclick = () => rewardModal.classList.add('show');
     if (rewardModalCloseBtn) rewardModalCloseBtn.onclick = () => rewardModal.classList.remove('show');
 
-    // Claim Button
     const claimRewardBtn = document.getElementById("claim-reward-btn");
     if (claimRewardBtn) claimRewardBtn.onclick = handleClaimReward;
 
-    // Other Buttons
     document.querySelectorAll(".invite-btn").forEach(btn => btn.onclick = handleInvite);
     const supportBtn = document.getElementById('support-btn');
     if (supportBtn) supportBtn.onclick = () => tg.openTelegramLink('https://t.me/YourSupportUsername' );
@@ -216,7 +213,30 @@ function handleLogout() {
 }
 
 async function handleWithdraw() {
-    // ... (This function remains the same)
+    const amountInput = document.getElementById('amount');
+    const walletInput = document.getElementById('wallet');
+    const amount = parseFloat(amountInput.value);
+    const wallet = walletInput.value.trim();
+    const minWithdrawal = 10;
+    if (isNaN(amount) || amount <= 0) { showModal("الرجاء إدخال مبلغ صحيح.", "warning"); return; }
+    if (wallet === "") { showModal("الرجاء إدخال عنوان المحفظة.", "warning"); return; }
+    if (amount < minWithdrawal) { showModal(`الحد الأدنى للسحب هو ${minWithdrawal} USDT.`, "warning"); return; }
+    if (!currentUserData || currentUserData.usdt < amount) { showModal("رصيدك الحالي غير كافٍ.", "error"); return; }
+    const btn = this;
+    btn.disabled = true; btn.innerText = "الرجاء الانتظار...";
+    try {
+        await db.collection("withdrawals").add({
+            userId: userId, username: currentUserData.username, amount: amount, wallet: wallet,
+            status: "pending", createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await userRef.update({ usdt: firebase.firestore.FieldValue.increment(-amount) });
+        showModal("✅ تم إرسال طلب السحب بنجاح!", "success");
+        amountInput.value = ""; walletInput.value = "";
+    } catch (error) {
+        showModal("حدث خطأ أثناء إرسال الطلب.", "error");
+    } finally {
+        btn.disabled = false; btn.innerText = "إرسال طلب السحب";
+    }
 }
 
 // ================= OTHER FUNCTIONS (Countdown, Leaderboard) =================
@@ -253,8 +273,58 @@ function startCountdown(lastCheckin) {
     countdownInterval = setInterval(updateTimer, 1000);
 }
 
+// 🔥 --- دالة لوحة الصدارة المعدلة --- 🔥
 async function fetchLeaderboard() {
-    // ... (This function remains the same)
+    const leaderboardList = document.getElementById("leaderboard-list");
+    if (!leaderboardList) return;
+
+    // 1. التأكد من وجود اتصال بـ Firebase أولاً
+    if (!db) {
+        console.error("Firestore (db) is not initialized yet.");
+        leaderboardList.innerHTML = `<p style="color: #f44336;">خطأ: لم يتم الاتصال بقاعدة البيانات.</p>`;
+        return;
+    }
+
+    // 2. عرض رسالة "جاري الجلب" دائماً عند استدعاء الدالة
+    leaderboardList.innerHTML = `<p style="color: #f7931a; text-align: center; padding: 20px;">جاري جلب المتصدرين...</p>`;
+
+    try {
+        // 3. جلب البيانات من Firebase
+        const querySnapshot = await db.collection("users").orderBy("usdt", "desc").limit(20).get();
+        
+        if (querySnapshot.empty) {
+            leaderboardList.innerHTML = `<p style="color: #8b949e; text-align: center; padding: 20px;">لا يوجد متصدرون بعد.</p>`;
+            return;
+        }
+
+        // 4. مسح القائمة (للتأكد من عدم وجود عناصر قديمة) وبدء العرض
+        leaderboardList.innerHTML = "";
+        let rank = 1;
+        querySnapshot.forEach((docSnap) => {
+            const userData = docSnap.data();
+            const item = document.createElement("div");
+            item.className = "leaderboard-item";
+            // دالة لإنشاء لون فريد لكل مستخدم
+            const avatarColor = (str) => {
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) {
+                    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+                }
+                let color = '#';
+                for (let i = 0; i < 3; i++) {
+                    const value = (hash >> (i * 8)) & 0xFF;
+                    color += ('00' + value.toString(16)).substr(-2);
+                }
+                return color;
+            };
+            item.innerHTML = `<div class="rank">${rank}</div><div class="avatar" style="background-color: ${avatarColor(userData.username)}"><span>${userData.username.charAt(0).toUpperCase()}</span></div><div class="user-info"><h4>${userData.username}</h4><small>LV. ${userData.level}</small></div><div class="user-score"><span>${Number(userData.usdt).toFixed(2)}</span><i class="ri-wallet-3-line"></i></div>`;
+            leaderboardList.appendChild(item);
+            rank++;
+        });
+    } catch (error) {
+        console.error("Error fetching leaderboard:", error);
+        leaderboardList.innerHTML = `<p style="color: #f44336; text-align: center; padding: 20px;">حدث خطأ أثناء جلب البيانات: ${error.message}</p>`;
+    }
 }
 
 // ================= START THE APP =================
