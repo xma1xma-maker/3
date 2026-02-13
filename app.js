@@ -328,9 +328,13 @@ async function handleTaskAction(event) {
                     });
                     showModal(`🎉 رائع! لقد ربحت ${reward} USDT.`, 'success');
                     btn.innerText = 'مكتمل';
-                    btn.parentElement.classList.add('completed');
-                    // تحديث الأيقونة
-                    btn.parentElement.querySelector('.task-icon i').className = 'ri-check-line';
+                    // تحديث واجهة المستخدم فوراً
+                    const taskItem = btn.closest('.task-item');
+                    if (taskItem) {
+                        taskItem.classList.add('completed');
+                        const iconElement = taskItem.querySelector('.task-icon i');
+                        if (iconElement) iconElement.className = 'ri-check-line';
+                    }
                 } catch (error) {
                     console.error("Error completing task:", error);
                     showModal('حدث خطأ ما، حاول مرة أخرى.', 'error');
@@ -349,4 +353,72 @@ async function handleTaskAction(event) {
 
 function startCountdown(lastCheckin) {
     const countdownEl = document.getElementById("reward-countdown");
-    const
+    const claimBtnEl = document.getElementById("claim-reward-btn");
+    if (!countdownEl || !claimBtnEl) return;
+    clearInterval(countdownInterval);
+    if (!lastCheckin) {
+        canCheckin = true;
+        countdownEl.innerText = "المكافأة جاهزة!";
+        claimBtnEl.disabled = false;
+        return;
+    }
+    const nextTime = new Date(lastCheckin.toDate().getTime() + 24 * 60 * 60 * 1000);
+    function updateTimer() {
+        const diff = nextTime - new Date();
+        if (diff <= 0) {
+            canCheckin = true;
+            countdownEl.innerText = "المكافأة جاهزة!";
+            claimBtnEl.disabled = false;
+            clearInterval(countdownInterval);
+            return;
+        }
+        canCheckin = false;
+        claimBtnEl.disabled = true;
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        countdownEl.innerText = `⏳ ${h}h ${m}m ${s}s`;
+    }
+    updateTimer();
+    countdownInterval = setInterval(updateTimer, 1000);
+}
+
+async function fetchLeaderboard() {
+    const leaderboardList = document.getElementById("leaderboard-list");
+    if (!leaderboardList || !db) return;
+    leaderboardList.innerHTML = `<p style="color: #f7931a; text-align: center; padding: 20px;">جاري جلب المتصدرين...</p>`;
+    try {
+        const querySnapshot = await db.collection("users").orderBy("usdt", "desc").limit(20).get();
+        if (querySnapshot.empty) {
+            leaderboardList.innerHTML = `<p style="color: #8b949e; text-align: center; padding: 20px;">لا يوجد متصدرون بعد.</p>`;
+            return;
+        }
+        leaderboardList.innerHTML = "";
+        let rank = 1;
+        querySnapshot.forEach((docSnap) => {
+            const userData = docSnap.data();
+            const item = document.createElement("div");
+            item.className = "leaderboard-item";
+            const avatarColor = (str) => {
+                if (!str) return '#888';
+                let hash = 0;
+                for (let i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
+                let color = '#';
+                for (let i = 0; i < 3; i++) {
+                    const value = (hash >> (i * 8)) & 0xFF;
+                    color += ('00' + value.toString(16)).substr(-2);
+                }
+                return color;
+            };
+            item.innerHTML = `<div class="rank">${rank}</div><div class="avatar" style="background-color: ${avatarColor(userData.username)}"><span>${userData.username.charAt(0).toUpperCase()}</span></div><div class="user-info"><h4>${userData.username}</h4><small>LV. ${userData.level}</small></div><div class="user-score"><span>${Number(userData.usdt).toFixed(2)}</span><i class="ri-wallet-3-line"></i></div>`;
+            leaderboardList.appendChild(item);
+            rank++;
+        });
+    } catch (error) {
+        console.error("Error fetching leaderboard:", error);
+        leaderboardList.innerHTML = `<p style="color: #f44336; text-align: center; padding: 20px;">حدث خطأ أثناء جلب البيانات: ${error.message}</p>`;
+    }
+}
+
+// ================= START THE APP =================
+main();
