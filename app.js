@@ -9,10 +9,7 @@ if (tg) {
 
 let db, auth, functions;
 let userId = null, userRef = null, currentUserData = null;
-let dailyCountdownInterval, hourlyCountdownInterval, energyRegenInterval;
-
-const MAX_ENERGY = 100;
-const ENERGY_REGEN_RATE = 20000; // 20 seconds
+let dailyCountdownInterval, hourlyCountdownInterval;
 
 // ================= UI FUNCTIONS =================
 function showLoader(show) { document.getElementById('loader-overlay').style.display = show ? 'flex' : 'none'; }
@@ -76,12 +73,10 @@ async function initUser(tgUser) {
             username: tgUser?.username || tgUser?.first_name || 'New User',
             usdt: 0, localCoin: 0, league: 'برونزي', referrals: 0,
             lastCheckin: null, streak: 0, 
-            lastHourlyClaim: null, // For the new Mine page feature
-            clickerEnergy: MAX_ENERGY,
-            lastEnergyUpdate: firebase.firestore.FieldValue.serverTimestamp(),
+            lastHourlyClaim: null,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             completedTasks: [], redeemedCodes: []
-        }, { merge: true }); // Use merge to avoid overwriting existing fields on re-init
+        }, { merge: true });
     }
 }
 
@@ -92,30 +87,15 @@ function updateUI(data) {
     updateElement('user-avatar', username.charAt(0).toUpperCase());
     updateElement('local-coin', Math.floor(data.localCoin));
     updateElement('league-name', data.league || 'برونزي');
-    updateElement('energy-level', `${Math.floor(data.clickerEnergy)} / ${MAX_ENERGY}`);
     updateElement('streak-days', data.streak || 0);
     updateElement('usdt-balance', Number(data.usdt).toFixed(2));
     updateElement('points-balance', Math.floor(data.localCoin));
     updateElement('referral-count', data.referrals || 0);
     startDailyCountdown(data.lastCheckin);
-    startHourlyCountdown(data.lastHourlyClaim); // Activate hourly countdown
-    startEnergyRegen();
+    startHourlyCountdown(data.lastHourlyClaim);
 }
 
-// ================= ENERGY & COUNTDOWN FUNCTIONS =================
-function startEnergyRegen() {
-    clearInterval(energyRegenInterval);
-    if (currentUserData && currentUserData.clickerEnergy < MAX_ENERGY) {
-        energyRegenInterval = setInterval(() => {
-            if (currentUserData && currentUserData.clickerEnergy < MAX_ENERGY) {
-                userRef.update({ clickerEnergy: firebase.firestore.FieldValue.increment(1) }).catch(console.error);
-            } else {
-                clearInterval(energyRegenInterval);
-            }
-        }, ENERGY_REGEN_RATE);
-    }
-}
-
+// ================= COUNTDOWN FUNCTIONS =================
 function startDailyCountdown(lastCheckin) {
     const el = document.getElementById("reward-countdown");
     const btn = document.getElementById("claim-reward-btn");
@@ -170,11 +150,10 @@ function startHourlyCountdown(lastClaim) {
 
 // ================= EVENT BINDING =================
 function bindAllEvents() {
-    document.getElementById('clicker-button')?.addEventListener('click', handleTap);
     document.getElementById('daily-reward-icon')?.addEventListener('click', () => document.getElementById('daily-reward-modal').classList.add('show'));
     document.querySelector('#daily-reward-modal .modal-close-btn')?.addEventListener('click', () => document.getElementById('daily-reward-modal').classList.remove('show'));
     document.getElementById('claim-reward-btn')?.addEventListener('click', handleClaimDailyReward);
-    document.getElementById('claim-hourly-btn')?.addEventListener('click', handleClaimHourlyReward); // New binding
+    document.getElementById('claim-hourly-btn')?.addEventListener('click', handleClaimHourlyReward);
     document.getElementById('alert-close-btn')?.addEventListener('click', () => document.getElementById('alert-modal').classList.remove('show'));
     document.getElementById('withdraw-btn')?.addEventListener('click', handleWithdraw);
     document.getElementById('redeem-gift-code-btn')?.addEventListener('click', handleRedeemGiftCode);
@@ -182,40 +161,12 @@ function bindAllEvents() {
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', (e) => { e.preventDefault(); showPage(link.dataset.page); });
     });
+    document.querySelectorAll('.action-card').forEach(card => {
+        card.addEventListener('click', () => showPage(card.dataset.page));
+    });
 }
 
 // ================= EVENT HANDLERS =================
-function handleTap(event) {
-    if (!currentUserData || currentUserData.clickerEnergy < 1) return;
-    
-    // Optimistic UI update for instant feedback
-    currentUserData.clickerEnergy--;
-    currentUserData.localCoin++;
-    updateElement('energy-level', `${Math.floor(currentUserData.clickerEnergy)} / ${MAX_ENERGY}`);
-    updateElement('local-coin', Math.floor(currentUserData.localCoin));
-
-    event.currentTarget.style.transform = 'scale(0.95)';
-    setTimeout(() => { event.currentTarget.style.transform = 'scale(1)'; }, 100);
-    
-    const feedback = document.createElement('div');
-    feedback.className = 'click-feedback';
-    feedback.innerText = '+1';
-    document.body.appendChild(feedback);
-    feedback.style.left = `${event.clientX}px`;
-    feedback.style.top = `${event.clientY}px`;
-    feedback.addEventListener('animationend', () => feedback.remove());
-    
-    if (window.tapTimeout) clearTimeout(window.tapTimeout);
-    window.tapTimeout = setTimeout(() => {
-        userRef.update({
-            localCoin: firebase.firestore.FieldValue.increment(1),
-            clickerEnergy: firebase.firestore.FieldValue.increment(-1)
-        }).then(() => {
-            if (currentUserData.clickerEnergy === MAX_ENERGY - 1) startEnergyRegen();
-        }).catch(console.error);
-    }, 500);
-}
-
 async function handleClaimDailyReward() {
     const btn = document.getElementById('claim-reward-btn');
     if (btn.disabled) return;
@@ -305,21 +256,27 @@ function handleInvite() {
     tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent(shareText)}`);
 }
 
+// ================= TASKS FUNCTIONS =================
 async function fetchAndDisplayTasks() {
-    const container = document.getElementById('tasks-list-container');
-    container.innerHTML = '<div class="loader-spinner" style="margin: 40px auto;"></div>';
+    const urgentContainer = document.getElementById('urgent-tasks-container');
+    const regularContainer = document.getElementById('tasks-list-container');
+    const urgentSection = document.getElementById('urgent-tasks-section');
+    const regularSection = document.getElementById('regular-tasks-section');
+
+    urgentContainer.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
+    regularContainer.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
+
     try {
         const tasksSnapshot = await db.collection('tasks').orderBy('createdAt', 'desc').get();
-        if (tasksSnapshot.empty) {
-            container.innerHTML = '<p style="text-align:center; color:var(--text-muted);">لا توجد مهام حالياً.</p>';
-            return;
-        }
-        let tasksHtml = '';
+        
+        let urgentHtml = '';
+        let regularHtml = '';
+
         tasksSnapshot.forEach(doc => {
             const task = doc.data();
             const isCompleted = currentUserData.completedTasks?.includes(doc.id);
-            tasksHtml += `
-                <div class="task-item ${isCompleted ? 'completed' : ''}">
+            const taskHtml = `
+                <div class="task-item ${isCompleted ? 'completed' : ''} ${task.isUrgent ? 'urgent' : ''}">
                     <div class="task-icon"><i class="${task.icon || 'ri-star-line'}"></i></div>
                     <div class="task-details">
                         <h4>${task.title}</h4>
@@ -330,14 +287,25 @@ async function fetchAndDisplayTasks() {
                     </button>
                 </div>
             `;
+            if (task.isUrgent) {
+                urgentHtml += taskHtml;
+            } else {
+                regularHtml += taskHtml;
+            }
         });
-        container.innerHTML = tasksHtml;
+
+        urgentContainer.innerHTML = urgentHtml || '<p style="text-align:center; color:var(--text-muted);">لا توجد مهام عاجلة حالياً.</p>';
+        regularContainer.innerHTML = regularHtml || '<p style="text-align:center; color:var(--text-muted);">لا توجد مهام يومية حالياً.</p>';
+        
+        urgentSection.style.display = urgentHtml ? 'block' : 'none';
+
         document.querySelectorAll('.task-action-btn').forEach(btn => {
             btn.addEventListener('click', handleTaskAction);
         });
     } catch (error) {
         console.error("Error fetching tasks:", error);
-        container.innerHTML = '<p style="text-align:center; color:var(--text-muted);">حدث خطأ في جلب المهام.</p>';
+        urgentContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted);">حدث خطأ في جلب المهام.</p>';
+        regularContainer.innerHTML = '';
     }
 }
 
@@ -360,7 +328,7 @@ async function handleTaskAction(event) {
                 completedTasks: firebase.firestore.FieldValue.arrayUnion(taskId)
             });
             showAlert('تم إكمال المهمة بنجاح!', 'success');
-            fetchAndDisplayTasks();
+            fetchAndDisplayTasks(); // Refresh tasks list
         } catch (error) {
             showAlert('فشل التحقق من المهمة.', 'error');
             btn.disabled = false;
