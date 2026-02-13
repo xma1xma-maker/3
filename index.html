@@ -19,7 +19,6 @@
             <div class="main-content">
                 <div class="header">
                     <div class="user-info">
-                        <!-- FIXED: Emptied for dynamic content -->
                         <div class="avatar" id="user-avatar"></div>
                         <span id="username"></span>
                     </div>
@@ -32,7 +31,6 @@
 
                 <div class="balance-display">
                     <img src="https://hamster.ton_wallet.uz/images/32/hamster-coin.png" alt="coin" class="coin-icon"/>
-                    <!-- FIXED: Emptied for dynamic content -->
                     <h1 id="local-coin"></h1>
                 </div>
 
@@ -45,7 +43,6 @@
                 <div class="bottom-bar">
                     <div class="energy-section">
                         <i class="ri-flashlight-fill"></i>
-                        <!-- THE MOST IMPORTANT FIX: Emptied for dynamic content -->
                         <span id="energy-level"></span>
                     </div>
                 </div>
@@ -68,7 +65,7 @@
             </div>
         </div>
         
-        <!-- ... (Rest of the HTML is identical) ... -->
+        <!-- ================= OTHER PAGES ================= -->
         <div class="page" id="earn-page">
             <div class="page-header"><h3>اكسب النقاط</h3></div>
             <div class="content-container" id="tasks-list-container"></div>
@@ -88,10 +85,26 @@
                  <div class="card"><h4>كود الهدية</h4><div class="form-group"><label for="gift-code-input">أدخل الكود هنا</label><input type="text" id="gift-code-input" placeholder="XXXX-XXXX"></div><button class="btn-submit" id="redeem-gift-code-btn">تفعيل الكود</button></div>
             </div>
         </div>
+
+        <!-- ================= MODALS ================= -->
         <div id="daily-reward-modal" class="modal-overlay"><div class="modal-content"><i class="ri-close-line modal-close-btn"></i><div class="modal-icon-wrapper"><i class="ri-gift-2-fill"></i></div><h3>المكافأة اليومية</h3><p>سجل حضورك يومياً لتربح مكافآت قيمة.</p><div class="reward-status"><div class="streak-info"><i class="ri-calendar-check-line"></i><span><span id="streak-days">0</span> أيام</span></div><div id="reward-countdown">⏳ ...</div></div><button id="claim-reward-btn" class="btn-submit" disabled>المطالبة بالمكافأة</button></div></div>
         <div id="alert-modal" class="modal-overlay"><div class="modal-content"><div id="alert-icon" class="modal-icon-wrapper"></div><p id="alert-message"></p><button id="alert-close-btn" class="btn-submit">حسناً</button></div></div>
-        <nav class="bottom-nav"><a href="#" class="nav-link" data-page="exchange-page"><i class="ri-exchange-dollar-line"></i><span>تحويل</span></a><a href="#" class="nav-link" data-page="mine-page"><i class="ri-pickaxe-line"></i><span>تعدين</span></a><a href="#" class="nav-link active" data-page="home-page"><i class="ri-home-4-fill"></i><span>الرئيسية</span></a><a href="#" class="nav-link" data-page="friends-page"><i class="ri-group-line"></i><span>الأصدقاء</span></a><a href="#" class="nav-link" data-page="earn-page"><i class="ri-copper-coin-line"></i><span>اكسب</span></a></nav>
+        
+        <!-- ================= NAVIGATION ================= -->
+        <nav class="bottom-nav">
+            <a href="#" class="nav-link" data-page="exchange-page"><i class="ri-exchange-dollar-line"></i><span>تحويل</span></a>
+            <a href="#" class="nav-link" data-page="mine-page"><i class="ri-pickaxe-line"></i><span>تعدين</span></a>
+            <a href="#" class="nav-link active" data-page="home-page"><i class="ri-home-4-fill"></i><span>الرئيسية</span></a>
+            <a href="#" class="nav-link" data-page="friends-page"><i class="ri-group-line"></i><span>الأصدقاء</span></a>
+            <a href="#" class="nav-link" data-page="earn-page"><i class="ri-copper-coin-line"></i><span>اكسب</span></a>
+        </nav>
     </div>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="app.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
