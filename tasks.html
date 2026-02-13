@@ -1,90 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <title>المهام</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
-  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
-</head>
-<body>
-  <div class="container">
-    <div class="page-header">
-        <i class="ri-task-line"></i>
-        <h1>مركز المهام</h1>
-    </div>
-    <!-- Tasks List -->
-    <div class="tasks-list">
-        <h3 class="section-title">🚀 مهام أساسية</h3>
-        
-        <div class="task-item">
-            <div class="task-info">
-                <div class="task-icon"><i class="ri-telegram-line"></i></div>
-                <div>
-                    <h4>انضم إلى قناة BTC WIN</h4>
-                    <small class="task-reward">
-                        <i class="ri-copper-coin-line"></i> 0.2+
-                        <i class="ri-wallet-3-line"></i> 0.02+
-                    </small>
-                </div>
-            </div>
-            <a href="https://t.me/BTCWIN_Official" target="_blank" class="task-button">
-                <i class="ri-arrow-right-s-line"></i>
-            </a>
-        </div>
-        <div class="task-item">
-            <div class="task-info">
-                <div class="task-icon"><i class="ri-twitter-x-line"></i></div>
-                <div>
-                    <h4>تابعنا على X (تويتر )</h4>
-                    <small class="task-reward">
-                        <i class="ri-copper-coin-line"></i> 0.3+
-                    </small>
-                </div>
-            </div>
-            <a href="#" class="task-button">
-                <i class="ri-arrow-right-s-line"></i>
-            </a>
-        </div>
-        <h3 class="section-title" style="margin-top: 40px;">🌟 مهام إضافية</h3>
-        <div class="task-item">
-            <div class="task-info">
-                <div class="task-icon"><i class="ri-user-add-line"></i></div>
-                <div>
-                    <h4>قم بدعوة 3 أصدقاء</h4>
-                    <small class="task-reward">
-                        <i class="ri-wallet-3-line"></i> 0.5+
-                    </small>
-                </div>
-            </div>
-            <button class="task-button" disabled>
-                <i class="ri-check-line"></i>
-            </button>
-        </div>
-    </div>
-  </div>
-
-  <!-- Custom Modal -->
-  <div id="custom-modal" class="modal-overlay">
-    <div class="modal-content">
-      <i id="modal-icon" class="ri-checkbox-circle-fill"></i>
-      <p id="modal-message">هذه رسالة تجريبية.</p>
-      <button id="modal-close-btn">حسناً</button>
-    </div>
-  </div>
-
-  <!-- Bottom Nav -->
-  <nav>
-    <a href="index.html"><i class="ri-home-5-line"></i><span>الرئيسية</span></a>
-    <a href="tasks.html" class="active"><i class="ri-task-fill"></i><span>المهام</span></a>
-    <a href="leaderboard.html"><i class="ri-trophy-line"></i><span>التصنيف</span></a>
-    <a href="profile.html"><i class="ri-user-3-line"></i><span>الشخصي</span></a>
-  </nav>
-
-  <!-- Classic & RELIABLE Script Loading (Guaranteed Order & Compatibility) -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-  <script src="app.js?v=3"></script>
-</body>
-</html>
