@@ -3,13 +3,18 @@ const tg = window.Telegram?.WebApp;
 if (tg) {
     tg.ready();
     tg.expand();
-    tg.setHeaderColor('#101218');
-    tg.setBackgroundColor('#101218');
+    tg.setHeaderColor('#E0E7FF'); // New vibrant color
+    tg.setBackgroundColor('#E0E7FF'); // New vibrant color
 }
 
 let db, auth, functions;
 let userId = null, userRef = null, currentUserData = null;
 let dailyCountdownInterval, hourlyCountdownInterval;
+
+// CONVERSION RATE: You can change this
+// Current rate: 1000 points = 0.1 USDT
+const POINTS_PER_USDT_UNIT = 1000; 
+const USDT_PER_UNIT = 0.1;
 
 // ================= UI FUNCTIONS =================
 function showLoader(show) { document.getElementById('loader-overlay').style.display = show ? 'flex' : 'none'; }
@@ -83,14 +88,19 @@ async function initUser(tgUser) {
 function updateUI(data) {
     if (!data) return;
     const username = data.username || 'User';
+    const localCoin = Math.floor(data.localCoin);
+    const usdt = Number(data.usdt).toFixed(4);
+
     updateElement('username', username);
     updateElement('user-avatar', username.charAt(0).toUpperCase());
-    updateElement('local-coin', Math.floor(data.localCoin));
+    updateElement('local-coin', localCoin);
+    updateElement('home-usdt-balance', usdt);
     updateElement('league-name', data.league || 'برونزي');
     updateElement('streak-days', data.streak || 0);
-    updateElement('usdt-balance', Number(data.usdt).toFixed(2));
-    updateElement('points-balance', Math.floor(data.localCoin));
-    updateElement('referral-count', data.referrals || 0);
+    updateElement('usdt-balance', usdt);
+    updateElement('points-balance', localCoin);
+    updateElement('exchange-rate-info', `${POINTS_PER_USDT_UNIT} نقطة = ${USDT_PER_UNIT} USDT`);
+    
     startDailyCountdown(data.lastCheckin);
     startHourlyCountdown(data.lastHourlyClaim);
 }
@@ -155,8 +165,8 @@ function bindAllEvents() {
     document.getElementById('claim-reward-btn')?.addEventListener('click', handleClaimDailyReward);
     document.getElementById('claim-hourly-btn')?.addEventListener('click', handleClaimHourlyReward);
     document.getElementById('alert-close-btn')?.addEventListener('click', () => document.getElementById('alert-modal').classList.remove('show'));
+    document.getElementById('convert-points-btn')?.addEventListener('click', handleConvertPoints);
     document.getElementById('withdraw-btn')?.addEventListener('click', handleWithdraw);
-    document.getElementById('redeem-gift-code-btn')?.addEventListener('click', handleRedeemGiftCode);
     document.querySelector('.invite-btn')?.addEventListener('click', handleInvite);
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', (e) => { e.preventDefault(); showPage(link.dataset.page); });
@@ -173,9 +183,7 @@ async function handleClaimDailyReward() {
     btn.disabled = true;
     try {
         await userRef.update({
-            localCoin: firebase.firestore.FieldValue.increment(500),
-            lastCheckin: firebase.firestore.FieldValue.serverTimestamp(),
-            streak: firebase.firestore.FieldValue.increment(1)
+            localCoin: firebase.firestore.FieldValue.increment(500)
         });
         document.getElementById('daily-reward-modal').classList.remove('show');
         showAlert("تهانينا! لقد حصلت على 500 نقطة.", "success");
@@ -198,6 +206,42 @@ async function handleClaimHourlyReward() {
     } catch (error) {
         showAlert("حدث خطأ ما.", "error");
         btn.disabled = false;
+    }
+}
+
+async function handleConvertPoints() {
+    const input = document.getElementById('points-to-convert');
+    const pointsToConvert = parseInt(input.value);
+    const btn = document.getElementById('convert-points-btn');
+
+    if (isNaN(pointsToConvert) || pointsToConvert <= 0) {
+        return showAlert("الرجاء إدخال عدد نقاط صحيح.", "error");
+    }
+    if (!currentUserData || currentUserData.localCoin < pointsToConvert) {
+        return showAlert("رصيد نقاطك غير كافٍ.", "error");
+    }
+    if (pointsToConvert < POINTS_PER_USDT_UNIT) {
+        return showAlert(`الحد الأدنى للتحويل هو ${POINTS_PER_USDT_UNIT} نقطة.`, "error");
+    }
+
+    btn.disabled = true;
+    btn.innerText = "جاري التحويل...";
+
+    try {
+        const usdtToAdd = (pointsToConvert / POINTS_PER_USDT_UNIT) * USDT_PER_UNIT;
+        
+        await userRef.update({
+            localCoin: firebase.firestore.FieldValue.increment(-pointsToConvert),
+            usdt: firebase.firestore.FieldValue.increment(usdtToAdd)
+        });
+
+        showAlert(`تم تحويل ${pointsToConvert} نقطة بنجاح إلى ${usdtToAdd.toFixed(4)} USDT.`, "success");
+        input.value = "";
+    } catch (error) {
+        showAlert("حدث خطأ أثناء عملية التحويل.", "error");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "تحويل";
     }
 }
 
@@ -226,29 +270,6 @@ async function handleWithdraw() {
     }
 }
 
-async function handleRedeemGiftCode() {
-    const input = document.getElementById("gift-code-input");
-    const code = input.value.trim().toUpperCase();
-    if (code === "") return showAlert("الرجاء إدخال الكود.", "error");
-
-    const btn = document.getElementById("redeem-gift-code-btn");
-    btn.disabled = true; btn.innerText = "جاري التحقق...";
-    try {
-        const redeemFunction = functions.httpsCallable('redeemGiftCode' );
-        const result = await redeemFunction({ code: code });
-        if (result.data.success) {
-            showAlert(`تهانينا! لقد ربحت ${result.data.reward} نقطة.`, "success");
-            input.value = "";
-        } else {
-            showAlert(result.data.message, "error");
-        }
-    } catch (error) {
-        showAlert(error.message || "الكود غير صحيح أو منتهي الصلاحية.", "error");
-    } finally {
-        btn.disabled = false; btn.innerText = "تفعيل الكود";
-    }
-}
-
 function handleInvite() {
     const botUsername = "gdkmgkdbot"; // استبدل باسم بوتك
     const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
@@ -261,7 +282,6 @@ async function fetchAndDisplayTasks() {
     const urgentContainer = document.getElementById('urgent-tasks-container');
     const regularContainer = document.getElementById('tasks-list-container');
     const urgentSection = document.getElementById('urgent-tasks-section');
-    const regularSection = document.getElementById('regular-tasks-section');
 
     urgentContainer.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
     regularContainer.innerHTML = '<div class="loader-spinner" style="margin: 20px auto;"></div>';
@@ -294,8 +314,8 @@ async function fetchAndDisplayTasks() {
             }
         });
 
-        urgentContainer.innerHTML = urgentHtml || '<p style="text-align:center; color:var(--text-muted);">لا توجد مهام عاجلة حالياً.</p>';
-        regularContainer.innerHTML = regularHtml || '<p style="text-align:center; color:var(--text-muted);">لا توجد مهام يومية حالياً.</p>';
+        urgentContainer.innerHTML = urgentHtml || '';
+        regularContainer.innerHTML = regularHtml || '<p style="text-align:center; color:var(--text-muted);">لا توجد مهام حالياً.</p>';
         
         urgentSection.style.display = urgentHtml ? 'block' : 'none';
 
