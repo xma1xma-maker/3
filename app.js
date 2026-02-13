@@ -4,7 +4,7 @@ if (tg) {
     tg.ready();
     tg.expand();
 }
-const tgUser = tg?.initDataUnsafe?.user;
+// لا نعلن عن tgUser هنا الآن، سننتظر قليلاً
 
 // ================= GLOBAL STATE =================
 let db, auth;
@@ -38,16 +38,31 @@ async function main() {
         firebase.initializeApp(firebaseConfig);
         auth = firebase.auth();
         db = firebase.firestore();
-
-        // --- 🔥 الحل الصحيح والنهائي (بناءً على تحليلك الدقيق) 🔥 ---
+        
         await auth.signInAnonymously();
+
+        // --- 🔥 الحل الصحيح مع التأخير المنطقي 🔥 ---
+        // انتظر لمدة تصل إلى ثانيتين حتى تصل بيانات تيليجرام
+        const tgUser = await new Promise(resolve => {
+            if (tg?.initDataUnsafe?.user) return resolve(tg.initDataUnsafe.user);
+            let attempts = 0;
+            const interval = setInterval(() => {
+                attempts++;
+                if (tg?.initDataUnsafe?.user) {
+                    clearInterval(interval);
+                    resolve(tg.initDataUnsafe.user);
+                } else if (attempts > 20) { // 20 * 100ms = 2 seconds
+                    clearInterval(interval);
+                    resolve(null); // لم تصل البيانات، افترض أنه متصفح عادي
+                }
+            }, 100);
+        });
 
         if (!tgUser) {
             showModal("يجب فتح التطبيق من داخل تيليجرام فقط.", "error");
-            // إخفاء المحتوى الرئيسي إذا لم يكن المستخدم في تيليجرام
             const container = document.querySelector('.container');
             if (container) container.style.display = 'none';
-            return; // إيقاف تنفيذ الكود بالكامل
+            return;
         }
 
         // 🔥 نجعل معرف المستخدم هو Telegram ID الحقيقي والدائم
@@ -55,7 +70,7 @@ async function main() {
         userRef = db.collection("users").doc(userId);
         // --- نهاية التعديل ---
 
-        await initUser();
+        await initUser(tgUser); // تمرير tgUser لإنشاء مستخدم جديد
 
         userRef.onSnapshot((snap) => {
             if (!snap.exists) return;
@@ -73,11 +88,10 @@ async function main() {
 
 // ================= FUNCTIONS =================
 
-async function initUser() {
+async function initUser(tgUser) { // يستقبل tgUser الآن
   const snap = await userRef.get();
   if (!snap.exists) {
     await userRef.set({
-        // لا حاجة لـ authUid بعد الآن، فـ userId هو Telegram ID
         telegramId: String(tgUser.id),
         username: tgUser.username || tgUser.first_name,
         usdt: 0, localCoin: 0, level: 1, tasksCompleted: 0, referrals: 0,
@@ -88,7 +102,6 @@ async function initUser() {
 }
 
 function updateUI(data) {
-    // Update elements on all pages
     updateElement("username", data.username);
     updateElement("user-initial", data.username.charAt(0).toUpperCase());
     updateElement("balance", Number(data.usdt).toFixed(2));
@@ -98,7 +111,6 @@ function updateUI(data) {
     updateElement("level", `LV.${data.level}`);
     updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
     
-    // Update elements specific to the profile page
     updateElement("profile-username", data.username);
     updateElement("profile-user-initial", data.username.charAt(0).toUpperCase());
     updateElement("profile-user-id-display", data.telegramId);
@@ -124,7 +136,7 @@ function updateElement(id, value) {
 function bindGlobalEvents() {
     const botUsername = "gdkmgkdbot";
     const inviteHandler = () => {
-        const inviteLink = `https://t.me/${botUsername}?start=${userId}`; // userId هو الآن Telegram ID
+        const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
         hasSharedToday = true;
         showModal("شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.", "success"  );
         tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent("انضم إلى هذا البوت الرائع!")}`);
