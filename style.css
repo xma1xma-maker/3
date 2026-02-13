@@ -21,6 +21,12 @@ body {
 }
 
 /* ================= HEADER ================= */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 header .profile-snippet {
   display: flex;
   align-items: center;
@@ -147,24 +153,6 @@ header .level {
   color: #8b949e;
 }
 
-.checkin-btn {
-  background: #f7931a;
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  padding: 10px 15px;
-  font-weight: 700;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-.checkin-btn:disabled {
-    background: #30363d;
-    cursor: not-allowed;
-}
-
 /* ================= HOT TASKS & TASKS PAGE ================= */
 .section-title {
   font-size: 18px;
@@ -172,7 +160,7 @@ header .level {
   margin: 30px 0 15px 0;
 }
 
-.tasks-list, .task-item {
+.tasks-list {
   display: flex;
   flex-direction: column;
   gap: 15px;
@@ -183,7 +171,7 @@ header .level {
   border: 1px solid #30363d;
   border-radius: 16px;
   padding: 15px;
-  flex-direction: row;
+  display: flex;
   justify-content: space-between;
   align-items: center;
 }
@@ -487,11 +475,17 @@ nav a.active {
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform 0.2s, background-color 0.2s;
 }
 
 .submit-btn:active {
   transform: scale(0.98);
+}
+
+.submit-btn:disabled {
+    background: #30363d;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 /* ================= CUSTOM MODAL ================= */
@@ -567,15 +561,106 @@ nav a.active {
 
 /* ======================= SPA (Single-Page App) Styles ======================= */
 .page {
-  display: none; /* إخفاء جميع الصفحات بشكل افتراضي */
+  display: none;
   animation: fadeIn 0.3s ease-in-out;
 }
 
 .page.active {
-  display: block; /* إظهار الصفحة النشطة فقط */
+  display: block;
 }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ======================= Daily Reward Update Styles ======================= */
+.header-icon {
+    width: 44px;
+    height: 44px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.header-icon:hover {
+    background-color: #1f242c;
+}
+
+.header-icon i {
+    font-size: 24px;
+    color: #f7931a;
+}
+
+.reward-modal {
+    padding-top: 50px;
+    position: relative;
+}
+
+.modal-close-icon {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #8b949e;
+    cursor: pointer;
+}
+
+.reward-modal .reward-icon {
+    font-size: 50px;
+    color: #f7931a;
+    margin-bottom: 10px;
+}
+
+.reward-modal h2 {
+    margin: 0 0 10px 0;
+}
+
+.reward-modal p {
+    font-size: 14px;
+    color: #8b949e;
+    line-height: 1.5;
+    max-width: 280px;
+    margin: 0 auto 20px auto;
+}
+
+.reward-timer-box {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 14px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+#reward-countdown {
+    font-size: 22px;
+    font-weight: 700;
+    color: #e6edf3;
+    text-align: center;
+}
+
+.streak-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 25px;
+    font-size: 14px;
+    color: #8b949e;
+}
+
+.streak-display i {
+    color: #ff6a00;
+    font-size: 18px;
+}
+
+.streak-display b {
+    color: #e6edf3;
 }
