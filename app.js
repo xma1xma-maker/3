@@ -4,7 +4,6 @@ if (tg) {
     tg.ready();
     tg.expand();
 }
-// لا نعلن عن tgUser هنا الآن، سننتظر قليلاً
 
 // ================= GLOBAL STATE =================
 let db, auth;
@@ -28,33 +27,35 @@ function showModal(message, type = 'success') {
     modalMessage.innerText = message;
     modalOverlay.classList.add('show');
 }
-if (modalCloseBtn) { modalCloseBtn.onclick = () => modalOverlay.classList.remove('show'); }
+if (modalCloseBtn) modalCloseBtn.onclick = () => modalOverlay.classList.remove('show');
 
 // ================= APP ENTRY POINT =================
 async function main() {
     try {
-        const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
-        
+        // ---------------- FIREBASE ----------------
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ",
+            authDomain: "tele-follow.firebaseapp.com",
+            projectId: "tele-follow",
+            storageBucket: "tele-follow.firebasestorage.app",
+            messagingSenderId: "311701431089",
+            appId: "1:311701431089:web:fcba431dcae893a87cc610"
+        };
+
         firebase.initializeApp(firebaseConfig);
         auth = firebase.auth();
         db = firebase.firestore();
-        
+
         await auth.signInAnonymously();
 
-        // --- 🔥 الحل الصحيح مع التأخير المنطقي 🔥 ---
-        // انتظر لمدة تصل إلى ثانيتين حتى تصل بيانات تيليجرام
+        // ---------------- GET TELEGRAM USER ----------------
         const tgUser = await new Promise(resolve => {
             if (tg?.initDataUnsafe?.user) return resolve(tg.initDataUnsafe.user);
             let attempts = 0;
             const interval = setInterval(() => {
                 attempts++;
-                if (tg?.initDataUnsafe?.user) {
-                    clearInterval(interval);
-                    resolve(tg.initDataUnsafe.user);
-                } else if (attempts > 20) { // 20 * 100ms = 2 seconds
-                    clearInterval(interval);
-                    resolve(null); // لم تصل البيانات، افترض أنه متصفح عادي
-                }
+                if (tg?.initDataUnsafe?.user) { clearInterval(interval); resolve(tg.initDataUnsafe.user); }
+                else if (attempts > 20) { clearInterval(interval); resolve(null); }
             }, 100);
         });
 
@@ -65,20 +66,21 @@ async function main() {
             return;
         }
 
-        // 🔥 نجعل معرف المستخدم هو Telegram ID الحقيقي والدائم
+        // ---------------- SET USER REFERENCE ----------------
         userId = String(tgUser.id);
         userRef = db.collection("users").doc(userId);
-        // --- نهاية التعديل ---
 
-        await initUser(tgUser); // تمرير tgUser لإنشاء مستخدم جديد
+        await initUser(tgUser);
 
+        // ---------------- REALTIME UPDATES ----------------
         userRef.onSnapshot((snap) => {
             if (!snap.exists) return;
             currentUserData = snap.data();
-            updateUI(currentUserData);
+            updateUI(currentUserData); // تحديث كل الصفحات
         });
 
         bindGlobalEvents();
+        bindPageSpecificEvents();
 
     } catch (error) {
         console.error("Critical Error:", error);
@@ -86,70 +88,84 @@ async function main() {
     }
 }
 
-// ================= FUNCTIONS =================
-
-async function initUser(tgUser) { // يستقبل tgUser الآن
-  const snap = await userRef.get();
-  if (!snap.exists) {
-    await userRef.set({
-        telegramId: String(tgUser.id),
-        username: tgUser.username || tgUser.first_name,
-        usdt: 0, localCoin: 0, level: 1, tasksCompleted: 0, referrals: 0,
-        banned: false, lastCheckin: null, streak: 0, 
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  }
+// ================= USER INIT =================
+async function initUser(tgUser) {
+    const snap = await userRef.get();
+    if (!snap.exists) {
+        await userRef.set({
+            telegramId: String(tgUser.id),
+            username: tgUser.username || tgUser.first_name,
+            usdt: 0,
+            localCoin: 0,
+            level: 1,
+            tasksCompleted: 0,
+            referrals: 0,
+            banned: false,
+            lastCheckin: null,
+            streak: 0,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
 }
 
+// ================= UPDATE UI =================
 function updateUI(data) {
-    updateElement("username", data.username);
-    updateElement("user-initial", data.username.charAt(0).toUpperCase());
-    updateElement("balance", Number(data.usdt).toFixed(2));
-    updateElement("local-coin", Number(data.localCoin).toFixed(1));
-    updateElement("tasks-completed", data.tasksCompleted);
-    updateElement("referrals", data.referrals);
-    updateElement("level", `LV.${data.level}`);
-    updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
-    
-    updateElement("profile-username", data.username);
-    updateElement("profile-user-initial", data.username.charAt(0).toUpperCase());
-    updateElement("profile-user-id-display", data.telegramId);
-    updateElement("profile-balance", Number(data.usdt).toFixed(2));
-    updateElement("profile-local-coin", Number(data.localCoin).toFixed(1));
-    updateElement("profile-referrals", data.referrals);
+    if (!data) return;
+
+    const mappings = [
+        { id: "username", value: data.username },
+        { id: "user-initial", value: data.username.charAt(0).toUpperCase() },
+        { id: "balance", value: Number(data.usdt).toFixed(2) },
+        { id: "local-coin", value: Number(data.localCoin).toFixed(1) },
+        { id: "tasks-completed", value: data.tasksCompleted },
+        { id: "referrals", value: data.referrals },
+        { id: "level", value: `LV.${data.level}` },
+        { id: "streak-info", value: `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم` },
+
+        { id: "profile-username", value: data.username },
+        { id: "profile-user-initial", value: data.username.charAt(0).toUpperCase() },
+        { id: "profile-user-id-display", value: data.telegramId },
+        { id: "profile-balance", value: Number(data.usdt).toFixed(2) },
+        { id: "profile-local-coin", value: Number(data.localCoin).toFixed(1) },
+        { id: "profile-referrals", value: data.referrals }
+    ];
+
+    mappings.forEach(m => updateElement(m.id, m.value));
 
     const progress = (data.usdt % 100);
     const levelProgressEl = document.getElementById("level-progress");
     if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
-    
+
     if (data.banned) { showModal("حسابك محظور", "error"); if (tg) tg.close(); }
-    
+
     startCountdown(data.lastCheckin);
-    bindPageSpecificEvents();
 }
 
+// ================= HELPER =================
 function updateElement(id, value) {
-  const el = document.getElementById(id);
-  if (el) el.innerText = value;
+    const el = document.getElementById(id);
+    if (el) el.innerText = value;
 }
 
+// ================= GLOBAL EVENTS =================
 function bindGlobalEvents() {
     const botUsername = "gdkmgkdbot";
     const inviteHandler = () => {
         const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
         hasSharedToday = true;
-        showModal("شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.", "success"  );
-        tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent("انضم إلى هذا البوت الرائع!")}`);
+        showModal("شكراً لمشاركتك! يمكنك الآن المطالبة بمكافأتك اليومية.", "success");
+        tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent("انضم إلى هذا البوت الرائع!")}`);
     };
     document.querySelectorAll(".invite-btn").forEach(btn => { btn.onclick = inviteHandler; });
 }
 
+// ================= PAGE SPECIFIC EVENTS =================
 function bindPageSpecificEvents() {
     const goToWithdrawBtn = document.getElementById('go-to-withdraw-btn');
     if (goToWithdrawBtn) goToWithdrawBtn.onclick = () => window.location.href = 'withdraw.html';
 
     const supportBtn = document.getElementById('support-btn');
-    if (supportBtn) supportBtn.onclick = () => tg.openTelegramLink('https://t.me/YourSupportUsername' );
+    if (supportBtn) supportBtn.onclick = () => tg.openTelegramLink('https://t.me/YourSupportUsername');
 
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
@@ -167,121 +183,113 @@ function bindPageSpecificEvents() {
     }
 
     const withdrawBtn = document.getElementById('withdraw-btn');
-    if (withdrawBtn) {
-        withdrawBtn.onclick = async () => {
-            const amountInput = document.getElementById('amount');
-            const walletInput = document.getElementById('wallet');
-            const amount = parseFloat(amountInput.value);
-            const wallet = walletInput.value.trim();
-            const minWithdrawal = 10;
+    if (withdrawBtn) withdrawBtn.onclick = handleWithdraw;
 
-            if (isNaN(amount) || amount <= 0) { showModal("الرجاء إدخال مبلغ صحيح.", "warning"); return; }
-            if (wallet === "") { showModal("الرجاء إدخال عنوان المحفظة.", "warning"); return; }
-            if (amount < minWithdrawal) { showModal(`الحد الأدنى للسحب هو ${minWithdrawal} USDT.`, "warning"); return; }
-            if (!currentUserData || currentUserData.usdt < amount) { showModal("رصيدك الحالي غير كافٍ.", "error"); return; }
-
-            withdrawBtn.disabled = true; withdrawBtn.innerText = "الرجاء الانتظار...";
-            try {
-                await db.collection("withdrawals").add({
-                    userId: userId, username: currentUserData.username, amount: amount, wallet: wallet,
-                    status: "pending", createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                await userRef.update({ usdt: firebase.firestore.FieldValue.increment(-amount) });
-                showModal("✅ تم إرسال طلب السحب بنجاح!", "success");
-                amountInput.value = ""; walletInput.value = "";
-            } catch (error) {
-                showModal("حدث خطأ أثناء إرسال الطلب.", "error");
-            } finally {
-                withdrawBtn.disabled = false;
-                withdrawBtn.innerText = "إرسال طلب السحب";
-            }
-        };
-    }
-    
     const checkinBtn = document.getElementById("checkin-btn");
-    if (checkinBtn) {
-        checkinBtn.onclick = async () => {
-            if (!canCheckin) { showModal("لم تمر 24 ساعة.", "warning"); return; }
-            if (!hasSharedToday) { showModal("شارك أولاً للحصول على المكافأة.", "warning"); return; }
-            await userRef.update({ 
-                usdt: firebase.firestore.FieldValue.increment(0.1), 
-                lastCheckin: new Date(), 
-                streak: firebase.firestore.FieldValue.increment(1) 
-            });
-            hasSharedToday = false;
-            showModal("🎉 حصلت على 0.1 USDT!", "success");
-        };
-    }
-    
-    if (document.getElementById("leaderboard-list")) {
-        fetchLeaderboard();
-    }
+    if (checkinBtn) checkinBtn.onclick = handleCheckin;
+
+    if (document.getElementById("leaderboard-list")) fetchLeaderboard();
+}
+
+// ================= WITHDRAW & CHECKIN HANDLERS =================
+async function handleWithdraw() {
+    const amountInput = document.getElementById('amount');
+    const walletInput = document.getElementById('wallet');
+    const amount = parseFloat(amountInput.value);
+    const wallet = walletInput.value.trim();
+    const minWithdrawal = 10;
+
+    if (isNaN(amount) || amount <= 0) { showModal("الرجاء إدخال مبلغ صحيح.", "warning"); return; }
+    if (wallet === "") { showModal("الرجاء إدخال عنوان المحفظة.", "warning"); return; }
+    if (amount < minWithdrawal) { showModal(`الحد الأدنى للسحب هو ${minWithdrawal} USDT.`, "warning"); return; }
+    if (!currentUserData || currentUserData.usdt < amount) { showModal("رصيدك الحالي غير كافٍ.", "error"); return; }
+
+    this.disabled = true; this.innerText = "الرجاء الانتظار...";
+    try {
+        await db.collection("withdrawals").add({
+            userId: userId, username: currentUserData.username, amount: amount, wallet: wallet,
+            status: "pending", createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await userRef.update({ usdt: firebase.firestore.FieldValue.increment(-amount) });
+        showModal("✅ تم إرسال طلب السحب بنجاح!", "success");
+        amountInput.value = ""; walletInput.value = "";
+    } catch (error) { showModal("حدث خطأ أثناء إرسال الطلب.", "error"); }
+    finally { this.disabled = false; this.innerText = "إرسال طلب السحب"; }
 }
 
 let canCheckin = false;
-let countdownInterval;
-function startCountdown(lastCheckin) {
-  const countdownEl = document.getElementById("countdown");
-  const checkinBtnEl = document.getElementById("checkin-btn");
-  if (!countdownEl || !checkinBtnEl) return;
-  clearInterval(countdownInterval);
-  const nextTime = lastCheckin ? new Date(lastCheckin.toDate().getTime() + 24 * 60 * 60 * 1000) : new Date();
-  function updateTimer() {
-    const now = new Date();
-    const diff = nextTime - now;
-    if (diff <= 0) {
-      canCheckin = true;
-      countdownEl.innerText = "تسجيل الحضور";
-      checkinBtnEl.disabled = false;
-      clearInterval(countdownInterval);
-      return;
-    }
-    canCheckin = false;
-    checkinBtnEl.disabled = true;
-    const h = Math.floor(diff / 1000 / 60 / 60);
-    const m = Math.floor((diff / 1000 / 60) % 60);
-    const s = Math.floor((diff / 1000) % 60);
-    countdownEl.innerText = `⏳ ${h}h ${m}m ${s}s`;
-  };
-  updateTimer();
-  countdownInterval = setInterval(updateTimer, 1000);
+async function handleCheckin() {
+    if (!canCheckin) { showModal("لم تمر 24 ساعة.", "warning"); return; }
+    if (!hasSharedToday) { showModal("شارك أولاً للحصول على المكافأة.", "warning"); return; }
+    await userRef.update({ 
+        usdt: firebase.firestore.FieldValue.increment(0.1), 
+        lastCheckin: new Date(), 
+        streak: firebase.firestore.FieldValue.increment(1) 
+    });
+    hasSharedToday = false;
+    showModal("🎉 حصلت على 0.1 USDT!", "success");
 }
 
+// ================= COUNTDOWN =================
+let countdownInterval;
+function startCountdown(lastCheckin) {
+    const countdownEl = document.getElementById("countdown");
+    const checkinBtnEl = document.getElementById("checkin-btn");
+    if (!countdownEl || !checkinBtnEl) return;
+    clearInterval(countdownInterval);
+
+    const nextTime = lastCheckin ? new Date(lastCheckin.toDate().getTime() + 24*60*60*1000) : new Date();
+    function updateTimer() {
+        const now = new Date();
+        const diff = nextTime - now;
+        if (diff <= 0) { canCheckin = true; countdownEl.innerText = "تسجيل الحضور"; checkinBtnEl.disabled = false; clearInterval(countdownInterval); return; }
+        canCheckin = false; checkinBtnEl.disabled = true;
+        const h = Math.floor(diff/1000/60/60);
+        const m = Math.floor((diff/1000/60)%60);
+        const s = Math.floor((diff/1000)%60);
+        countdownEl.innerText = `⏳ ${h}h ${m}m ${s}s`;
+    }
+    updateTimer();
+    countdownInterval = setInterval(updateTimer, 1000);
+}
+
+// ================= LEADERBOARD =================
 async function fetchLeaderboard() {
     const leaderboardList = document.getElementById("leaderboard-list");
     if (!leaderboardList) return;
-    leaderboardList.innerHTML = `<p style="color: #f7931a; text-align: center; padding: 20px;">جاري جلب المتصدرين...</p>`;
+    leaderboardList.innerHTML = `<p style="color: #f7931a; text-align:center; padding:20px;">جاري جلب المتصدرين...</p>`;
     try {
-        const querySnapshot = await db.collection("users").orderBy("usdt", "desc").limit(20).get();
-        if (querySnapshot.empty) {
-            leaderboardList.innerHTML = `<p style="color: #8b949e; text-align: center; padding: 20px;">لا يوجد متصدرون بعد.</p>`;
-            return;
-        }
+        const querySnapshot = await db.collection("users").orderBy("usdt","desc").limit(20).get();
+        if (querySnapshot.empty) { leaderboardList.innerHTML = `<p style="color:#8b949e;text-align:center;padding:20px;">لا يوجد متصدرون بعد.</p>`; return; }
         leaderboardList.innerHTML = "";
         let rank = 1;
-        querySnapshot.forEach((docSnap) => {
+        querySnapshot.forEach(docSnap => {
             const userData = docSnap.data();
             const item = document.createElement("div");
             item.className = "leaderboard-item";
-            item.innerHTML = `<div class="rank">${rank}</div><div class="avatar" style="background-color: ${stringToColor(userData.username)}"><span>${userData.username.charAt(0).toUpperCase()}</span></div><div class="user-info"><h4>${userData.username}</h4><small>LV. ${userData.level}</small></div><div class="user-score"><span>${Number(userData.usdt).toFixed(2)}</span><i class="ri-wallet-3-line"></i></div>`;
+            item.innerHTML = `
+                <div class="rank">${rank}</div>
+                <div class="avatar" style="background-color:${stringToColor(userData.username)}">
+                    <span>${userData.username.charAt(0).toUpperCase()}</span>
+                </div>
+                <div class="user-info"><h4>${userData.username}</h4><small>LV. ${userData.level}</small></div>
+                <div class="user-score"><span>${Number(userData.usdt).toFixed(2)}</span><i class="ri-wallet-3-line"></i></div>`;
             leaderboardList.appendChild(item);
             rank++;
         });
     } catch (error) {
         console.error("Error fetching leaderboard:", error);
-        leaderboardList.innerHTML = `<p style="color: #f44336; text-align: center; padding: 20px;">حدث خطأ: ${error.message}</p>`;
+        leaderboardList.innerHTML = `<p style="color:#f44336;text-align:center;padding:20px;">حدث خطأ: ${error.message}</p>`;
     }
 }
 
+// ================= UTILS =================
 function stringToColor(str) {
-  if (!str) return '#8b949e';
-  let hash = 0; str.split('').forEach(char => { hash = char.charCodeAt(0) + ((hash << 5) - hash); });
-  let color = '#';
-  for (let i = 0; i < 3; i++) {
-    const value = (hash >> (i * 8)) & 0xFF;
-    color += value.toString(16).padStart(2, '0');
-  }
-  return color;
+    if (!str) return '#8b949e';
+    let hash=0; str.split('').forEach(c=>{hash=c.charCodeAt(0)+((hash<<5)-hash);});
+    let color='#';
+    for(let i=0;i<3;i++){ color+=((hash>>i*8)&0xFF).toString(16).padStart(2,'0'); }
+    return color;
 }
 
 // ================= START THE APP =================
