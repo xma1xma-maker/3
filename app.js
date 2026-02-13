@@ -52,7 +52,7 @@ async function main() {
         });
 
         bindGlobalEvents();
-        // *** تم حذف bindPageSpecificEvents() من هنا ***
+        bindPageSpecificEvents();
 
     } catch (error) {
         console.error("Critical Error:", error);
@@ -77,7 +77,6 @@ async function initUser() {
 }
 
 function updateUI(data) {
-    // Update elements on all pages
     updateElement("username", data.username);
     updateElement("user-initial", data.username.charAt(0).toUpperCase());
     updateElement("balance", Number(data.usdt).toFixed(2));
@@ -87,7 +86,6 @@ function updateUI(data) {
     updateElement("level", `LV.${data.level}`);
     updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
     
-    // Update elements specific to the profile page
     updateElement("profile-username", data.username);
     updateElement("profile-user-initial", data.username.charAt(0).toUpperCase());
     updateElement("profile-user-id-display", data.telegramId);
@@ -102,9 +100,6 @@ function updateUI(data) {
     if (data.banned) { showModal("حسابك محظور", "error"); if (tg) tg.close(); }
     
     startCountdown(data.lastCheckin);
-
-    // *** الحل النهائي: ربط الأزرار بعد كل تحديث للواجهة ***
-    bindPageSpecificEvents();
 }
 
 function updateElement(id, value) {
@@ -275,4 +270,5 @@ function stringToColor(str) {
 }
 
 // ================= START THE APP =================
+// *** هذا هو السطر الذي كان مفقوداً ***
 main();
