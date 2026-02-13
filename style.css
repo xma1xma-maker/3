@@ -1,5 +1,5 @@
 /* =================================
-   -- CYBER CLICKER - FULLY FUNCTIONAL V2 --
+   -- CYBER CLICKER - FULLY FUNCTIONAL V3 --
    ================================= */
 
 :root {
@@ -48,16 +48,17 @@ body {
 .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: 600; }
 .icon-box { width: 36px; height: 36px; border-radius: 50%; background: var(--card-bg); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .main-content { display: flex; flex-direction: column; align-items: center; justify-content: space-between; flex-grow: 1; padding: 0 20px 20px; }
-.top-bar, .bottom-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.top-bar { display: flex; justify-content: center; align-items: center; width: 100%; } /* Centered the top bar */
+.bottom-bar { display: flex; justify-content: center; align-items: center; width: 100%; } /* Centered the bottom bar */
 .bar-item { display: flex; align-items: center; gap: 8px; background: var(--card-bg); padding: 8px 16px; border-radius: 12px; border: 1px solid var(--border-color); cursor: pointer; }
 .balance-display { display: flex; align-items: center; gap: 10px; }
 .coin-icon { width: 40px; height: 40px; }
 .balance-display h1 { font-size: 48px; font-weight: 700; margin: 0; }
 .clicker-zone { display: flex; align-items: center; justify-content: center; }
-.clicker-button { width: 250px; height: 250px; border-radius: 50%; background: radial-gradient(circle, #2a2e3a 0%, #101218 70%); box-shadow: 0 0 20px rgba(74, 144, 226, 0.2), inset 0 2px 5px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s ease; }
+.clicker-button { width: 250px; height: 250px; border-radius: 50%; background: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s ease; }
 .clicker-button:active { transform: scale(0.95); }
-.clicker-button img { width: 60%; pointer-events: none; }
-.energy-section { display: flex; align-items: center; gap: 8px; color: var(--text-color); font-weight: 600; }
+.clicker-button img { width: 100%; pointer-events: none; }
+.energy-section { display: flex; align-items: center; gap: 8px; color: var(--text-color); font-weight: 600; background: var(--card-bg); padding: 8px 16px; border-radius: 12px; border: 1px solid var(--border-color); }
 .energy-section i { color: var(--primary-color); }
 
 /* --- Other Pages (Tasks, Exchange, Friends) --- */
