@@ -14,9 +14,9 @@ let currentUserData = null;
 let canCheckin = false;
 let countdownInterval;
 
-// ================= CUSTOM MODAL =================
+// ================= CUSTOM MODAL (General Notifications) =================
 const modalOverlay = document.getElementById('custom-modal');
-const modalContent = document.querySelector('.modal-content');
+const modalContent = document.querySelector('#custom-modal .modal-content');
 const modalIcon = document.getElementById('modal-icon');
 const modalMessage = document.getElementById('modal-message');
 const modalCloseBtn = document.getElementById('modal-close-btn');
@@ -47,23 +47,19 @@ function setupNavigation() {
             navLinks.forEach(navLink => navLink.classList.remove('active'));
             link.classList.add('active');
             
-            // تحديث أيقونات شريط التنقل
             updateNavIcons(pageId);
 
-            // إذا انتقلنا إلى صفحة المتصدرين، قم بتحديث القائمة
             if (pageId === 'leaderboard-page') {
                 fetchLeaderboard();
             }
         });
     });
     
-    // زر الانتقال إلى صفحة السحب من صفحة الملف الشخصي
     const goToWithdrawBtn = document.getElementById('go-to-withdraw-btn');
     if (goToWithdrawBtn) {
         goToWithdrawBtn.onclick = () => {
             pages.forEach(page => page.classList.remove('active'));
             document.getElementById('withdraw-page').classList.add('active');
-            // لا نغير حالة شريط التنقل هنا لأن صفحة السحب ليست فيه
         };
     }
 }
@@ -87,11 +83,10 @@ function updateNavIcons(activePageId) {
     });
 }
 
-
 // ================= APP ENTRY POINT =================
 async function main() {
     try {
-        setupNavigation(); // إعداد التنقل أولاً
+        setupNavigation(); 
 
         const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
         
@@ -105,7 +100,7 @@ async function main() {
 
         if (!tgUser) {
             showModal("يجب فتح التطبيق من داخل تيليجرام فقط.", "error");
-            document.body.innerHTML = ''; // مسح كل شيء في حالة عدم وجود مستخدم
+            document.body.innerHTML = ''; 
             return;
         }
 
@@ -121,6 +116,7 @@ async function main() {
         });
 
         bindGlobalEvents();
+        bindPageSpecificEvents(); // Bind events that might need currentUserData
 
     } catch (error) {
         console.error("Critical Error:", error);
@@ -152,7 +148,6 @@ function updateUI(data) {
     updateElement("tasks-completed", data.tasksCompleted);
     updateElement("referrals", data.referrals);
     updateElement("level", `LV.${data.level}`);
-    updateElement("streak-info", `إجمالي ${data.streak || 0} يوم | تسلسل ${data.streak || 0} يوم`);
     
     // Update elements specific to the profile page
     updateElement("profile-username", data.username);
@@ -166,10 +161,12 @@ function updateUI(data) {
     const levelProgressEl = document.getElementById("level-progress");
     if (levelProgressEl) levelProgressEl.style.width = `${progress}%`;
     
+    // Update streak days in the new reward modal
+    updateElement("streak-days", data.streak || 0);
+    
     if (data.banned) { showModal("حسابك محظور", "error"); if (tg) tg.close(); }
     
     startCountdown(data.lastCheckin);
-    bindPageSpecificEvents();
 }
 
 function updateElement(id, value) {
@@ -186,6 +183,18 @@ function bindGlobalEvents() {
         tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent("انضم إلى هذا البوت الرائع!")}`);
     };
     document.querySelectorAll(".invite-btn").forEach(btn => { btn.onclick = inviteHandler; });
+
+    // Bind events for the new daily reward modal
+    const dailyRewardIcon = document.getElementById('daily-reward-icon');
+    const rewardModal = document.getElementById('daily-reward-modal');
+    const rewardModalCloseBtn = document.getElementById('reward-modal-close-btn');
+
+    if (dailyRewardIcon) {
+        dailyRewardIcon.onclick = () => rewardModal.classList.add('show');
+    }
+    if (rewardModalCloseBtn) {
+        rewardModalCloseBtn.onclick = () => rewardModal.classList.remove('show');
+    }
 }
 
 function bindPageSpecificEvents() {
@@ -239,14 +248,14 @@ function bindPageSpecificEvents() {
         };
     }
     
-    const checkinBtn = document.getElementById("checkin-btn");
-    if (checkinBtn) {
-        checkinBtn.onclick = async () => {
+    const claimRewardBtn = document.getElementById("claim-reward-btn");
+    if (claimRewardBtn) {
+        claimRewardBtn.onclick = async () => {
             if (!canCheckin) { showModal("لم تمر 24 ساعة.", "warning"); return; }
             if (!hasSharedToday) { showModal("شارك أولاً للحصول على المكافأة.", "warning"); return; }
             
             try {
-                checkinBtn.disabled = true;
+                claimRewardBtn.disabled = true;
                 await userRef.update({ 
                     usdt: firebase.firestore.FieldValue.increment(0.1), 
                     lastCheckin: firebase.firestore.FieldValue.serverTimestamp(), 
@@ -254,25 +263,26 @@ function bindPageSpecificEvents() {
                 });
                 showModal("🎉 حصلت على 0.1 USDT!", "success");
                 hasSharedToday = false;
+                document.getElementById('daily-reward-modal').classList.remove('show');
             } catch (error) {
                 showModal("حدث خطأ ما. حاول مرة أخرى.", "error");
-                checkinBtn.disabled = false;
+                claimRewardBtn.disabled = false;
             }
         };
     }
 }
 
 function startCountdown(lastCheckin) {
-  const countdownEl = document.getElementById("countdown");
-  const checkinBtnEl = document.getElementById("checkin-btn");
-  if (!countdownEl || !checkinBtnEl) return;
+  const countdownEl = document.getElementById("reward-countdown");
+  const claimBtnEl = document.getElementById("claim-reward-btn");
+  if (!countdownEl || !claimBtnEl) return;
   
   clearInterval(countdownInterval);
 
   if (!lastCheckin) {
       canCheckin = true;
-      countdownEl.innerText = "تسجيل الحضور";
-      checkinBtnEl.disabled = false;
+      countdownEl.innerText = "المكافأة جاهزة!";
+      claimBtnEl.disabled = false;
       return;
   }
 
@@ -284,13 +294,13 @@ function startCountdown(lastCheckin) {
     const diff = nextTime - now;
     if (diff <= 0) {
       canCheckin = true;
-      countdownEl.innerText = "تسجيل الحضور";
-      checkinBtnEl.disabled = false;
+      countdownEl.innerText = "المكافأة جاهزة!";
+      claimBtnEl.disabled = false;
       clearInterval(countdownInterval);
       return;
     }
     canCheckin = false;
-    checkinBtnEl.disabled = true;
+    claimBtnEl.disabled = true;
     const h = Math.floor(diff / 1000 / 60 / 60);
     const m = Math.floor((diff / 1000 / 60) % 60);
     const s = Math.floor((diff / 1000) % 60);
