@@ -189,7 +189,8 @@ function bindPageSpecificEvents() {
             if (!hasSharedToday) { showModal("شارك أولاً للحصول على المكافأة.", "warning"); return; }
             await userRef.update({ 
                 usdt: firebase.firestore.FieldValue.increment(0.1), 
-                lastCheckin: new Date(), 
+                // *** الحل: نستخدم serverTimestamp لضمان التوافق ***
+                lastCheckin: firebase.firestore.FieldValue.serverTimestamp(), 
                 streak: firebase.firestore.FieldValue.increment(1) 
             });
             hasSharedToday = false;
@@ -204,12 +205,27 @@ function bindPageSpecificEvents() {
 
 let canCheckin = false;
 let countdownInterval;
+// --- 🔥 الدالة المحدثة والنهائية 🔥 ---
 function startCountdown(lastCheckin) {
   const countdownEl = document.getElementById("countdown");
   const checkinBtnEl = document.getElementById("checkin-btn");
   if (!countdownEl || !checkinBtnEl) return;
+  
   clearInterval(countdownInterval);
-  const nextTime = lastCheckin ? new Date(lastCheckin.toDate().getTime() + 24 * 60 * 60 * 1000) : new Date();
+
+  // إذا لم يكن هناك تسجيل دخول سابق، جهز الزر
+  if (!lastCheckin) {
+      canCheckin = true;
+      countdownEl.innerText = "تسجيل الحضور";
+      checkinBtnEl.disabled = false;
+      return;
+  }
+
+  // *** الحل: تحقق إذا كان lastCheckin هو Timestamp وحوله إلى Date ***
+  const lastCheckinDate = lastCheckin.toDate ? lastCheckin.toDate() : lastCheckin;
+
+  const nextTime = new Date(lastCheckinDate.getTime() + 24 * 60 * 60 * 1000);
+  
   function updateTimer() {
     const now = new Date();
     const diff = nextTime - now;
