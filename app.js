@@ -53,6 +53,7 @@ async function main() {
         await initUser(tg?.initDataUnsafe?.user);
         bindAllEvents();
 
+        // The onSnapshot listener is now the SINGLE SOURCE OF TRUTH for UI updates.
         userRef.onSnapshot((snap) => {
             if (snap.exists) {
                 currentUserData = snap.data();
@@ -84,6 +85,7 @@ async function initUser(tgUser) {
     }
 }
 
+// This function ONLY updates the screen based on data from Firebase. No logic here.
 function updateUI(data) {
     if (!data) return;
     const username = data.username || 'User';
@@ -91,45 +93,19 @@ function updateUI(data) {
     updateElement('user-avatar', username.charAt(0).toUpperCase());
     updateElement('local-coin', Math.floor(data.localCoin));
     updateElement('league-name', data.league || 'برونزي');
-    // FIXED: Correctly display energy
     updateElement('energy-level', `${Math.floor(data.clickerEnergy)} / ${MAX_ENERGY}`);
     updateElement('streak-days', data.streak || 0);
     updateElement('usdt-balance', Number(data.usdt).toFixed(2));
     updateElement('points-balance', Math.floor(data.localCoin));
     updateElement('referral-count', data.referrals || 0);
     startDailyCountdown(data.lastCheckin);
-    startEnergyRegen();
-}
-
-// ================= ENERGY REGENERATION SYSTEM =================
-function startEnergyRegen() {
-    clearInterval(energyRegenInterval); // Stop any existing timer
-    
-    // Only start the timer if energy is not full
-    if (currentUserData && currentUserData.clickerEnergy < MAX_ENERGY) {
-        energyRegenInterval = setInterval(() => {
-            // Double-check inside the interval
-            if (currentUserData && currentUserData.clickerEnergy < MAX_ENERGY) {
-                // This update is now handled by the onSnapshot listener,
-                // but we can do an optimistic update here for smoothness.
-                currentUserData.clickerEnergy++;
-                updateElement('energy-level', `${Math.floor(currentUserData.clickerEnergy)} / ${MAX_ENERGY}`);
-                
-                // The actual database update
-                userRef.update({
-                    clickerEnergy: firebase.firestore.FieldValue.increment(1)
-                }).catch(console.error);
-            } else {
-                // Stop the timer if energy becomes full
-                clearInterval(energyRegenInterval);
-            }
-        }, ENERGY_REGEN_RATE);
-    }
+    // The energy regeneration is now smarter and handled by a Cloud Function (or a more robust client-side timer).
 }
 
 // ================= EVENT BINDING =================
 function bindAllEvents() {
     document.getElementById('clicker-button')?.addEventListener('click', handleTap);
+    // ... (rest of the bindings are the same)
     document.getElementById('daily-reward-icon')?.addEventListener('click', () => document.getElementById('daily-reward-modal').classList.add('show'));
     document.querySelector('#daily-reward-modal .modal-close-btn')?.addEventListener('click', () => document.getElementById('daily-reward-modal').classList.remove('show'));
     document.getElementById('claim-reward-btn')?.addEventListener('click', handleClaimDailyReward);
@@ -143,16 +119,24 @@ function bindAllEvents() {
 }
 
 // ================= EVENT HANDLERS =================
+// REWRITTEN: This function is now much simpler.
 function handleTap(event) {
-    if (!currentUserData || currentUserData.clickerEnergy < 1) return;
+    // Check if we can tap based on the latest data.
+    if (!currentUserData || currentUserData.clickerEnergy < 1) {
+        // Optional: Add a "shake" animation to show no energy
+        event.currentTarget.style.animation = 'shake 0.3s';
+        setTimeout(() => { event.currentTarget.style.animation = ''; }, 300);
+        return;
+    }
     
-    // --- OPTIMISTIC UI UPDATE (Instant feedback for the user) ---
-    currentUserData.clickerEnergy--;
-    currentUserData.localCoin++;
-    updateElement('energy-level', `${Math.floor(currentUserData.clickerEnergy)} / ${MAX_ENERGY}`);
-    updateElement('local-coin', Math.floor(currentUserData.localCoin));
+    // Perform the click action in Firestore.
+    // This is the ONLY place we write to the database for a tap.
+    userRef.update({
+        localCoin: firebase.firestore.FieldValue.increment(1),
+        clickerEnergy: firebase.firestore.FieldValue.increment(-1)
+    }).catch(console.error);
 
-    // Visual feedback for the click
+    // Visual feedback for the click (animation)
     event.currentTarget.style.transform = 'scale(0.95)';
     setTimeout(() => { event.currentTarget.style.transform = 'scale(1)'; }, 100);
     
@@ -163,22 +147,37 @@ function handleTap(event) {
     feedback.style.left = `${event.clientX}px`;
     feedback.style.top = `${event.clientY}px`;
     feedback.addEventListener('animationend', () => feedback.remove());
-    
-    // --- DEBOUNCED FIRESTORE UPDATE (Save resources) ---
-    if (window.tapTimeout) clearTimeout(window.tapTimeout);
-    window.tapTimeout = setTimeout(() => {
-        userRef.update({
-            localCoin: firebase.firestore.FieldValue.increment(1),
-            clickerEnergy: firebase.firestore.FieldValue.increment(-1)
-        }).then(() => {
-            // If energy was full before this tap, restart the regeneration timer
-            if (currentUserData.clickerEnergy === MAX_ENERGY - 1) {
-                startEnergyRegen();
-            }
-        }).catch(console.error);
-    }, 500); // Group writes and send every 500ms
 }
 
+// --- The energy regeneration is now handled by a separate, robust timer ---
+// This function will be called once when the app starts.
+(function startSmartEnergyRegen() {
+    setInterval(async () => {
+        // Fetch the latest user data directly before updating.
+        const doc = await userRef.get();
+        if (doc.exists) {
+            const data = doc.data();
+            if (data.clickerEnergy < MAX_ENERGY) {
+                // Calculate how much energy should have been generated since the last update.
+                const lastUpdate = data.lastEnergyUpdate.toDate();
+                const now = new Date();
+                const diffSeconds = (now - lastUpdate) / 1000;
+                const energyToRegen = Math.floor(diffSeconds / (ENERGY_REGEN_RATE / 1000));
+
+                if (energyToRegen > 0) {
+                    const newEnergy = Math.min(MAX_ENERGY, data.clickerEnergy + energyToRegen);
+                    userRef.update({
+                        clickerEnergy: newEnergy,
+                        lastEnergyUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            }
+        }
+    }, ENERGY_REGEN_RATE); // Check every 20 seconds
+})();
+
+
+// ... (Rest of the functions: handleClaimDailyReward, handleWithdraw, etc. are the same)
 async function handleClaimDailyReward() {
     const btn = document.getElementById('claim-reward-btn');
     if (btn.disabled) return;
@@ -279,7 +278,6 @@ function startDailyCountdown(lastCheckin) {
     }, 1000);
 }
 
-// ================= TASKS FUNCTIONS =================
 async function fetchAndDisplayTasks() {
     const container = document.getElementById('tasks-list-container');
     container.innerHTML = '<div class="loader-spinner" style="margin: 40px auto;"></div>';
