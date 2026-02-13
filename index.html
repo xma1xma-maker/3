@@ -2,20 +2,26 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Tele-Follow App</title>
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet"/>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <!-- شاشة التحميل الاحترافية -->
+    <div id="loader-overlay" class="loader-overlay">
+        <div class="loader-spinner"></div>
+        <p>جاري التحميل...</p>
+    </div>
+
     <div class="app-container">
         <!-- ================= HOME PAGE ================= -->
         <div class="page active" id="home-page">
             <header class="header">
                 <div class="user-info">
-                    <div class="avatar">
-                        <span id="user-initial">U</span>
+                    <div class="avatar-wrapper">
+                        <div class="avatar" id="user-avatar">U</div>
                     </div>
                     <span id="username">Username</span>
                 </div>
@@ -26,139 +32,99 @@
 
             <main class="main-content">
                 <div class="balance-card">
-                    <div class="balance-header">
-                        <small>الرصيد الإجمالي (USDT )</small>
-                        <i class="ri-wallet-3-line"></i>
-                    </div>
-                    <h1 class="balance-amount">$<span id="balance">0.00</span></h1>
+                    <small>الرصيد الإجمالي</small>
+                    <h1>$<span id="balance">0.00</span></h1>
                     <div class="local-coin-balance">
                         <i class="ri-copper-coin-line"></i>
-                        <span id="local-coin">0.0</span>
+                        <span id="local-coin">0.0</span> نقطة
                     </div>
                 </div>
 
                 <div class="level-card">
                     <div class="level-info">
-                        <span id="level">LV.1</span>
-                        <span>LV.2</span>
+                        <span id="level-name">مبتدئ</span>
+                        <span id="level-progress-text">0/100</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress" id="level-progress" style="width: 0%;"></div>
+                        <div class="progress" id="level-progress"></div>
                     </div>
                 </div>
 
-                <!-- ================= HOURLY BONUS CARD ================= -->
+                <div class="clicker-card">
+                    <div class="clicker-header">
+                        <h4>صندوق الكنز</h4>
+                        <div class="energy-display">
+                            <i class="ri-flashlight-fill"></i>
+                            <span id="energy-level">1000</span>/1000
+                        </div>
+                    </div>
+                    <div id="treasure-box" class="treasure-box">
+                        <i class="ri-treasure-map-line"></i>
+                    </div>
+                </div>
+
                 <div class="hourly-bonus-card">
                     <div class="bonus-icon"><i class="ri-time-line"></i></div>
                     <div class="bonus-details">
                         <h4>مكافأة كل ساعة</h4>
-                        <small id="hourly-bonus-timer">جاهزة للمطالبة!</small>
+                        <small id="hourly-bonus-timer">جاهزة!</small>
                     </div>
-                    <button id="claim-hourly-bonus-btn" class="btn btn-secondary">اجمع</button>
-                </div>
-
-                <!-- ================= CLICKER GAME CARD ================= -->
-                <div class="clicker-card">
-                    <div id="treasure-box" class="treasure-box">
-                        <i class="ri-treasure-map-line"></i>
-                    </div>
-                    <div class="clicker-info">
-                        <div class="energy-bar-container">
-                            <div id="energy-bar" class="energy-bar"></div>
-                        </div>
-                        <small>الطاقة: <span id="energy-level">1000</span> / 1000</small>
-                    </div>
-                </div>
-
-                <div class="action-buttons">
-                    <button class="btn btn-primary invite-btn">
-                        <i class="ri-user-add-line"></i> ادعُ صديقاً
-                    </button>
-                    <button class="btn btn-secondary" id="go-to-withdraw-btn">
-                        <i class="ri-send-plane-line"></i> سحب
-                    </button>
+                    <button id="claim-hourly-bonus-btn" class="btn btn-gradient">اجمع</button>
                 </div>
             </main>
         </div>
 
         <!-- ================= TASKS PAGE ================= -->
         <div class="page" id="tasks-page">
-            <div class="page-header">
-                <h3>المهام اليومية</h3>
-                <p>أكمل المهام التالية لربح المزيد من النقاط.</p>
-            </div>
-            <div class="tasks-list" id="tasks-list-container">
-                <!-- الهيكل العظمي للمهام -->
-                <div class="task-item-placeholder"><div class="icon-placeholder"></div><div class="text-placeholder"></div></div>
-            </div>
+            <div class="page-header"><h3>المهام</h3></div>
+            <div class="tasks-list" id="tasks-list-container"></div>
         </div>
 
         <!-- ================= LEADERBOARD PAGE ================= -->
         <div class="page" id="leaderboard-page">
-            <div class="page-header">
-                <h3>لوحة الصدارة</h3>
-                <p>شاهد أكثر المستخدمين ربحاً في التطبيق.</p>
-            </div>
+            <div class="page-header"><h3>لوحة الصدارة</h3></div>
             <div class="leaderboard-list" id="leaderboard-list"></div>
         </div>
 
         <!-- ================= PROFILE PAGE ================= -->
         <div class="page" id="profile-page">
-            <div class="profile-header">
-                <div class="profile-avatar">
-                    <span id="profile-user-initial">U</span>
-                </div>
+            <div class="page-header"><h3>الحساب</h3></div>
+            <div class="profile-card">
+                <div class="profile-avatar-large" id="profile-avatar">U</div>
                 <h3 id="profile-username">Username</h3>
                 <small>ID: <span id="profile-user-id-display">...</span></small>
             </div>
-            <div class="profile-stats">
-                <div class="stat-item"><h4>$<span id="profile-balance">0.00</span></h4><small>الرصيد</small></div>
-                <div class="stat-item"><h4><span id="profile-local-coin">0.0</span></h4><small>نقاط</small></div>
-                <div class="stat-item"><h4><span id="profile-referrals">0</span></h4><small>الإحالات</small></div>
-            </div>
             <div class="profile-menu">
-                <button class="menu-item invite-btn"><i class="ri-user-add-line"></i> <span>ادعُ صديقاً</span></button>
-                <button class="menu-item" id="go-to-gift-code-btn"><i class="ri-coupon-3-line"></i> <span>إدخال كود هدية</span></button>
-                <button class="menu-item" id="support-btn"><i class="ri-customer-service-2-line"></i> <span>الدعم الفني</span></button>
-                <button class="menu-item" id="logout-btn"><i class="ri-logout-box-r-line"></i> <span>تسجيل الخروج</span></button>
+                <a class="menu-item" id="go-to-withdraw-btn"><i class="ri-wallet-3-line"></i><span>سحب الأرباح</span><i class="ri-arrow-left-s-line"></i></a>
+                <a class="menu-item" id="go-to-gift-code-btn"><i class="ri-coupon-3-line"></i><span>إدخال كود هدية</span><i class="ri-arrow-left-s-line"></i></a>
+                <a class="menu-item invite-btn"><i class="ri-user-add-line"></i><span>دعوة الأصدقاء</span><i class="ri-arrow-left-s-line"></i></a>
+                <a class="menu-item" id="support-btn"><i class="ri-customer-service-2-line"></i><span>الدعم الفني</span><i class="ri-arrow-left-s-line"></i></a>
             </div>
         </div>
 
-        <!-- ================= WITHDRAW PAGE ================= -->
-        <div class="page" id="withdraw-page">
-            <div class="page-header"><i class="ri-arrow-right-s-line back-btn" data-target="home-page"></i><h3>طلب سحب</h3><p>الحد الأدنى للسحب هو 10 USDT.</p></div>
-            <div class="withdraw-form">
+        <!-- ================= SUB PAGES (Withdraw, GiftCode ) ================= -->
+        <div class="page sub-page" id="withdraw-page">
+            <div class="page-header"><i class="ri-arrow-right-s-line back-btn"></i><h3>سحب الأرباح</h3></div>
+            <div class="form-container">
+                <p>الحد الأدنى للسحب هو 10 USDT. سيتم إرسال المبلغ إلى محفظتك خلال 24 ساعة.</p>
                 <div class="form-group"><label for="amount">المبلغ (USDT)</label><input type="number" id="amount" placeholder="e.g., 15"></div>
                 <div class="form-group"><label for="wallet">عنوان المحفظة (USDT TRC20)</label><input type="text" id="wallet" placeholder="أدخل عنوان محفظتك هنا"></div>
-                <button class="btn btn-primary" id="withdraw-btn">إرسال طلب السحب</button>
+                <button class="btn btn-gradient" id="withdraw-btn">إرسال الطلب</button>
             </div>
         </div>
 
-        <!-- ================= GIFT CODE PAGE ================= -->
-        <div class="page" id="gift-code-page">
-            <div class="page-header"><i class="ri-arrow-right-s-line back-btn" data-target="profile-page"></i><h3>كود الهدية</h3><p>أدخل كود الهدية الذي حصلت عليه من قناتنا لربح نقاط.</p></div>
-            <div class="withdraw-form">
+        <div class="page sub-page" id="gift-code-page">
+            <div class="page-header"><i class="ri-arrow-right-s-line back-btn"></i><h3>كود الهدية</h3></div>
+            <div class="form-container">
+                <p>أدخل كود الهدية الذي حصلت عليه من قناتنا الرسمية لربح نقاط ومكافآت قيمة.</p>
                 <div class="form-group"><label for="gift-code-input">كود الهدية</label><input type="text" id="gift-code-input" placeholder="XXXX-XXXX-XXXX"></div>
-                <button class="btn btn-primary" id="redeem-gift-code-btn">تأكيد</button>
+                <button class="btn btn-gradient" id="redeem-gift-code-btn">تأكيد</button>
             </div>
         </div>
 
         <!-- ================= MODALS ================= -->
-        <div id="custom-modal" class="modal-overlay">
-            <div class="modal-content"><i id="modal-icon"></i><p id="modal-message"></p><button id="modal-close-btn" class="btn btn-primary">حسناً</button></div>
-        </div>
-        <div id="daily-reward-modal" class="modal-overlay">
-            <div class="modal-content reward-modal">
-                <i class="ri-close-line" id="reward-modal-close-btn"></i>
-                <div class="reward-icon-large"><i class="ri-gift-2-fill"></i></div>
-                <h3>المكافأة اليومية</h3><p>سجل حضورك يومياً لتربح المكافآت.</p>
-                <div class="reward-status">
-                    <div class="streak-info"><i class="ri-calendar-check-line"></i><span><span id="streak-days">0</span> أيام متتالية</span></div>
-                    <div id="reward-countdown">⏳ ...</div>
-                </div>
-                <button id="claim-reward-btn" class="btn btn-primary" disabled>المطالبة بالمكافأة</button>
-            </div>
-        </div>
+        <div id="custom-modal" class="modal-overlay"><div class="modal-content"><i id="modal-icon"></i><p id="modal-message"></p><button id="modal-close-btn" class="btn btn-gradient">حسناً</button></div></div>
+        <div id="daily-reward-modal" class="modal-overlay"><div class="modal-content reward-modal"><i class="ri-close-line" id="reward-modal-close-btn"></i><div class="reward-icon-large"><i class="ri-gift-2-fill"></i></div><h3>المكافأة اليومية</h3><p>سجل حضورك يومياً لتربح مكافآت قيمة.</p><div class="reward-status"><div class="streak-info"><i class="ri-calendar-check-line"></i><span><span id="streak-days">0</span> أيام متتالية</span></div><div id="reward-countdown">⏳ ...</div></div><button id="claim-reward-btn" class="btn btn-gradient" disabled>المطالبة بالمكافأة</button></div></div>
 
         <!-- ================= NAVIGATION ================= -->
         <nav class="bottom-nav">
@@ -172,7 +138,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script> <!-- مهم لأكواد الهدايا -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="app.js"></script>
 </body>
