@@ -187,14 +187,33 @@ function bindPageSpecificEvents() {
         checkinBtn.onclick = async () => {
             if (!canCheckin) { showModal("لم تمر 24 ساعة.", "warning"); return; }
             if (!hasSharedToday) { showModal("شارك أولاً للحصول على المكافأة.", "warning"); return; }
-            await userRef.update({ 
-                usdt: firebase.firestore.FieldValue.increment(0.1), 
-                // *** الحل: نستخدم serverTimestamp لضمان التوافق ***
-                lastCheckin: firebase.firestore.FieldValue.serverTimestamp(), 
-                streak: firebase.firestore.FieldValue.increment(1) 
-            });
-            hasSharedToday = false;
-            showModal("🎉 حصلت على 0.1 USDT!", "success");
+            
+            // --- 🔥 التعديل الجديد والنهائي 🔥 ---
+            try {
+                // 1. عطّل الزر فوراً لمنع الضغطات المزدوجة
+                checkinBtn.disabled = true;
+                
+                // 2. قم بتحديث قاعدة البيانات فقط
+                await userRef.update({ 
+                    usdt: firebase.firestore.FieldValue.increment(0.1), 
+                    lastCheckin: firebase.firestore.FieldValue.serverTimestamp(), 
+                    streak: firebase.firestore.FieldValue.increment(1) 
+                });
+                
+                // 3. اعرض رسالة النجاح
+                showModal("🎉 حصلت على 0.1 USDT!", "success");
+                
+                // 4. أعد تعيين متغير المشاركة
+                hasSharedToday = false;
+                
+                // 5. لا تقم بأي تحديث للواجهة هنا. دع onSnapshot يقوم بالمهمة.
+                
+            } catch (error) {
+                showModal("حدث خطأ ما. حاول مرة أخرى.", "error");
+                // أعد تفعيل الزر في حالة الفشل
+                checkinBtn.disabled = false;
+            }
+            // --- نهاية التعديل ---
         };
     }
     
@@ -205,7 +224,6 @@ function bindPageSpecificEvents() {
 
 let canCheckin = false;
 let countdownInterval;
-// --- 🔥 الدالة المحدثة والنهائية 🔥 ---
 function startCountdown(lastCheckin) {
   const countdownEl = document.getElementById("countdown");
   const checkinBtnEl = document.getElementById("checkin-btn");
@@ -213,7 +231,6 @@ function startCountdown(lastCheckin) {
   
   clearInterval(countdownInterval);
 
-  // إذا لم يكن هناك تسجيل دخول سابق، جهز الزر
   if (!lastCheckin) {
       canCheckin = true;
       countdownEl.innerText = "تسجيل الحضور";
@@ -221,9 +238,7 @@ function startCountdown(lastCheckin) {
       return;
   }
 
-  // *** الحل: تحقق إذا كان lastCheckin هو Timestamp وحوله إلى Date ***
   const lastCheckinDate = lastCheckin.toDate ? lastCheckin.toDate() : lastCheckin;
-
   const nextTime = new Date(lastCheckinDate.getTime() + 24 * 60 * 60 * 1000);
   
   function updateTimer() {
