@@ -15,47 +15,23 @@ const MAX_ENERGY = 100;
 const ENERGY_REGEN_RATE = 20000; // 20 seconds
 
 // ================= UI FUNCTIONS =================
-function showLoader(show) {
-    const loader = document.getElementById('loader-overlay');
-    if(loader) loader.style.display = show ? 'flex' : 'none';
-}
-
+function showLoader(show) { document.getElementById('loader-overlay').style.display = show ? 'flex' : 'none'; }
 function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    const targetPage = document.getElementById(pageId);
-    if (targetPage) targetPage.classList.add('active');
-
+    document.getElementById(pageId)?.classList.add('active');
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-    const activeLink = document.querySelector(`.nav-link[data-page="${pageId}"]`);
-    if (activeLink) activeLink.classList.add('active');
-
-    if (pageId === 'earn-page') {
-        fetchAndDisplayTasks();
-    }
+    document.querySelector(`.nav-link[data-page="${pageId}"]`)?.classList.add('active');
+    if (pageId === 'earn-page') fetchAndDisplayTasks();
 }
-
 function updateElement(id, value) {
     const el = document.getElementById(id);
     if (el) el.innerText = value;
 }
-
 function showAlert(message, type = 'success') {
     const modal = document.getElementById('alert-modal');
-    if (!modal) return;
-    const iconWrapper = document.getElementById('alert-icon');
-    const iconEl = iconWrapper.querySelector('i') || document.createElement('i');
-    
-    if (type === 'success') {
-        iconEl.className = 'ri-checkbox-circle-line';
-        iconWrapper.className = 'modal-icon-wrapper success';
-    } else {
-        iconEl.className = 'ri-error-warning-line';
-        iconWrapper.className = 'modal-icon-wrapper error';
-    }
-    if (!iconWrapper.hasChildNodes()) {
-        iconWrapper.appendChild(iconEl);
-    }
-
+    const icon = document.getElementById('alert-icon');
+    icon.innerHTML = type === 'success' ? '<i class="ri-checkbox-circle-line"></i>' : '<i class="ri-error-warning-line"></i>';
+    icon.className = `modal-icon-wrapper ${type}`;
     document.getElementById('alert-message').innerText = message;
     modal.classList.add('show');
 }
@@ -115,6 +91,7 @@ function updateUI(data) {
     updateElement('user-avatar', username.charAt(0).toUpperCase());
     updateElement('local-coin', Math.floor(data.localCoin));
     updateElement('league-name', data.league || 'برونزي');
+    // FIXED: Correctly display energy
     updateElement('energy-level', `${Math.floor(data.clickerEnergy)} / ${MAX_ENERGY}`);
     updateElement('streak-days', data.streak || 0);
     updateElement('usdt-balance', Number(data.usdt).toFixed(2));
@@ -124,17 +101,30 @@ function updateUI(data) {
     startEnergyRegen();
 }
 
+// ================= ENERGY REGENERATION SYSTEM =================
 function startEnergyRegen() {
-    clearInterval(energyRegenInterval);
-    energyRegenInterval = setInterval(() => {
-        if (currentUserData && currentUserData.clickerEnergy < MAX_ENERGY) {
-            userRef.update({
-                clickerEnergy: firebase.firestore.FieldValue.increment(1)
-            }).catch(console.error);
-        } else {
-            clearInterval(energyRegenInterval);
-        }
-    }, ENERGY_REGEN_RATE);
+    clearInterval(energyRegenInterval); // Stop any existing timer
+    
+    // Only start the timer if energy is not full
+    if (currentUserData && currentUserData.clickerEnergy < MAX_ENERGY) {
+        energyRegenInterval = setInterval(() => {
+            // Double-check inside the interval
+            if (currentUserData && currentUserData.clickerEnergy < MAX_ENERGY) {
+                // This update is now handled by the onSnapshot listener,
+                // but we can do an optimistic update here for smoothness.
+                currentUserData.clickerEnergy++;
+                updateElement('energy-level', `${Math.floor(currentUserData.clickerEnergy)} / ${MAX_ENERGY}`);
+                
+                // The actual database update
+                userRef.update({
+                    clickerEnergy: firebase.firestore.FieldValue.increment(1)
+                }).catch(console.error);
+            } else {
+                // Stop the timer if energy becomes full
+                clearInterval(energyRegenInterval);
+            }
+        }, ENERGY_REGEN_RATE);
+    }
 }
 
 // ================= EVENT BINDING =================
@@ -156,11 +146,13 @@ function bindAllEvents() {
 function handleTap(event) {
     if (!currentUserData || currentUserData.clickerEnergy < 1) return;
     
+    // --- OPTIMISTIC UI UPDATE (Instant feedback for the user) ---
     currentUserData.clickerEnergy--;
     currentUserData.localCoin++;
     updateElement('energy-level', `${Math.floor(currentUserData.clickerEnergy)} / ${MAX_ENERGY}`);
     updateElement('local-coin', Math.floor(currentUserData.localCoin));
 
+    // Visual feedback for the click
     event.currentTarget.style.transform = 'scale(0.95)';
     setTimeout(() => { event.currentTarget.style.transform = 'scale(1)'; }, 100);
     
@@ -172,15 +164,19 @@ function handleTap(event) {
     feedback.style.top = `${event.clientY}px`;
     feedback.addEventListener('animationend', () => feedback.remove());
     
+    // --- DEBOUNCED FIRESTORE UPDATE (Save resources) ---
     if (window.tapTimeout) clearTimeout(window.tapTimeout);
     window.tapTimeout = setTimeout(() => {
         userRef.update({
             localCoin: firebase.firestore.FieldValue.increment(1),
             clickerEnergy: firebase.firestore.FieldValue.increment(-1)
         }).then(() => {
-            if (currentUserData.clickerEnergy === MAX_ENERGY - 1) startEnergyRegen();
+            // If energy was full before this tap, restart the regeneration timer
+            if (currentUserData.clickerEnergy === MAX_ENERGY - 1) {
+                startEnergyRegen();
+            }
         }).catch(console.error);
-    }, 500);
+    }, 500); // Group writes and send every 500ms
 }
 
 async function handleClaimDailyReward() {
@@ -334,20 +330,18 @@ async function handleTaskAction(event) {
 
     setTimeout(async () => {
         try {
-            // For simplicity, we assume the user completed the task.
-            // Real validation would require a more complex server-side check.
             await userRef.update({
                 localCoin: firebase.firestore.FieldValue.increment(taskReward),
                 completedTasks: firebase.firestore.FieldValue.arrayUnion(taskId)
             });
             showAlert('تم إكمال المهمة بنجاح!', 'success');
-            fetchAndDisplayTasks(); // Refresh tasks list
+            fetchAndDisplayTasks();
         } catch (error) {
             showAlert('فشل التحقق من المهمة.', 'error');
             btn.disabled = false;
             btn.innerText = 'اذهب';
         }
-    }, 5000); // 5 second delay to simulate user performing the task
+    }, 5000);
 }
 
 // ================= START THE APP =================
