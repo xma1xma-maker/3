@@ -9,7 +9,10 @@ if (tg) {
 
 let db, auth, functions;
 let userId = null, userRef = null, currentUserData = null;
-let dailyCountdownInterval;
+let dailyCountdownInterval, energyRegenInterval;
+
+const MAX_ENERGY = 100; // Maximum energy
+const ENERGY_REGEN_RATE = 20000; // 20 seconds in milliseconds
 
 // ================= UI FUNCTIONS =================
 function showLoader(show) {
@@ -26,7 +29,6 @@ function showPage(pageId) {
     const activeLink = document.querySelector(`.nav-link[data-page="${pageId}"]`);
     if (activeLink) activeLink.classList.add('active');
 
-    // Fetch data for specific pages when they are shown
     if (pageId === 'earn-page') {
         fetchAndDisplayTasks();
     }
@@ -81,10 +83,6 @@ async function main() {
                 updateUI(currentUserData);
                 showLoader(false);
             }
-        }, (error) => {
-            console.error("Snapshot error:", error);
-            showAlert("خطأ في تحديث البيانات.", "error");
-            showLoader(false);
         });
     } catch (error) {
         console.error("Critical Error:", error);
@@ -101,7 +99,9 @@ async function initUser(tgUser) {
             telegramId: tgUser?.id ? String(tgUser.id) : 'N/A',
             username: tgUser?.username || tgUser?.first_name || 'New User',
             usdt: 0, localCoin: 0, league: 'برونزي', referrals: 0,
-            lastCheckin: null, streak: 0, clickerEnergy: 1000,
+            lastCheckin: null, streak: 0, 
+            clickerEnergy: MAX_ENERGY,
+            lastEnergyUpdate: firebase.firestore.FieldValue.serverTimestamp(),
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             completedTasks: [], redeemedCodes: []
         });
@@ -115,12 +115,28 @@ function updateUI(data) {
     updateElement('user-avatar', username.charAt(0).toUpperCase());
     updateElement('local-coin', Math.floor(data.localCoin));
     updateElement('league-name', data.league || 'برونزي');
-    updateElement('energy-level', data.clickerEnergy ?? 1000);
+    updateElement('energy-level', `${Math.floor(data.clickerEnergy)} / ${MAX_ENERGY}`);
     updateElement('streak-days', data.streak || 0);
     updateElement('usdt-balance', Number(data.usdt).toFixed(2));
     updateElement('points-balance', Math.floor(data.localCoin));
     updateElement('referral-count', data.referrals || 0);
     startDailyCountdown(data.lastCheckin);
+    startEnergyRegen();
+}
+
+// ================= NEW ENERGY REGENERATION SYSTEM =================
+function startEnergyRegen() {
+    clearInterval(energyRegenInterval);
+    energyRegenInterval = setInterval(() => {
+        if (currentUserData && currentUserData.clickerEnergy < MAX_ENERGY) {
+            userRef.update({
+                clickerEnergy: firebase.firestore.FieldValue.increment(1)
+            }).catch(console.error);
+        } else {
+            // Stop the interval if energy is full to save resources
+            clearInterval(energyRegenInterval);
+        }
+    }, ENERGY_REGEN_RATE);
 }
 
 // ================= EVENT BINDING =================
@@ -140,9 +156,17 @@ function bindAllEvents() {
 
 // ================= EVENT HANDLERS =================
 function handleTap(event) {
-    if (!currentUserData || currentUserData.clickerEnergy <= 0) return;
+    if (!currentUserData || currentUserData.clickerEnergy < 1) return;
+    
+    // Optimistic UI update for instant feedback
+    currentUserData.clickerEnergy--;
+    currentUserData.localCoin++;
+    updateElement('energy-level', `${Math.floor(currentUserData.clickerEnergy)} / ${MAX_ENERGY}`);
+    updateElement('local-coin', Math.floor(currentUserData.localCoin));
+
     event.currentTarget.style.transform = 'scale(0.95)';
     setTimeout(() => { event.currentTarget.style.transform = 'scale(1)'; }, 100);
+    
     const feedback = document.createElement('div');
     feedback.className = 'click-feedback';
     feedback.innerText = '+1';
@@ -150,10 +174,20 @@ function handleTap(event) {
     feedback.style.left = `${event.clientX}px`;
     feedback.style.top = `${event.clientY}px`;
     feedback.addEventListener('animationend', () => feedback.remove());
-    userRef.update({
-        localCoin: firebase.firestore.FieldValue.increment(1),
-        clickerEnergy: firebase.firestore.FieldValue.increment(-1)
-    }).catch(console.error);
+    
+    // Debounced Firestore update to reduce writes
+    if (window.tapTimeout) clearTimeout(window.tapTimeout);
+    window.tapTimeout = setTimeout(() => {
+        userRef.update({
+            localCoin: firebase.firestore.FieldValue.increment(1),
+            clickerEnergy: firebase.firestore.FieldValue.increment(-1)
+        }).then(() => {
+            // Restart energy regen if it was stopped
+            if (currentUserData.clickerEnergy === MAX_ENERGY - 1) {
+                startEnergyRegen();
+            }
+        }).catch(console.error);
+    }, 500);
 }
 
 async function handleClaimDailyReward() {
@@ -259,7 +293,7 @@ function startDailyCountdown(lastCheckin) {
 // ================= TASKS FUNCTIONS =================
 async function fetchAndDisplayTasks() {
     const container = document.getElementById('tasks-list-container');
-    container.innerHTML = '<div class="loader-spinner" style="margin: 40px auto;"></div>'; // Show loader
+    container.innerHTML = '<div class="loader-spinner" style="margin: 40px auto;"></div>';
     try {
         const tasksSnapshot = await db.collection('tasks').get();
         if (tasksSnapshot.empty) {
@@ -277,7 +311,7 @@ async function fetchAndDisplayTasks() {
                         <h4>${task.title}</h4>
                         <p>+${task.reward} نقطة</p>
                     </div>
-                    <button class="btn-submit task-action-btn" data-task-id="${doc.id}" data-task-link="${task.link}" ${isCompleted ? 'disabled' : ''}>
+                    <button class="btn-submit task-action-btn" data-task-id="${doc.id}" data-task-link="${task.link}" data-task-reward="${task.reward}" ${isCompleted ? 'disabled' : ''}>
                         ${isCompleted ? 'مكتملة' : 'اذهب'}
                     </button>
                 </div>
@@ -298,6 +332,7 @@ async function handleTaskAction(event) {
     if (btn.disabled) return;
     const taskId = btn.dataset.taskId;
     const taskLink = btn.dataset.taskLink;
+    const taskReward = parseInt(btn.dataset.taskReward);
 
     tg.openTelegramLink(taskLink);
 
@@ -306,8 +341,9 @@ async function handleTaskAction(event) {
 
     setTimeout(async () => {
         try {
+            // We assume the user completed the task. For real validation, a server-side check is needed.
             await userRef.update({
-                localCoin: firebase.firestore.FieldValue.increment(currentUserData.tasks.find(t => t.id === taskId).reward),
+                localCoin: firebase.firestore.FieldValue.increment(taskReward),
                 completedTasks: firebase.firestore.FieldValue.arrayUnion(taskId)
             });
             showAlert('تم إكمال المهمة بنجاح!', 'success');
@@ -317,7 +353,7 @@ async function handleTaskAction(event) {
             btn.disabled = false;
             btn.innerText = 'اذهب';
         }
-    }, 5000); // 5 second delay to simulate user performing the task
+    }, 5000); // 5 second delay
 }
 
 // ================= START THE APP =================
