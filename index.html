@@ -71,15 +71,86 @@
             </div>
         </div>
         
-        <!-- ... (Rest of the pages are the same) ... -->
-        <div class="page" id="earn-page"><div class="page-header"><h3>اكسب النقاط</h3></div><div class="content-container"><div id="urgent-tasks-section"><h4>🔥 مهام عاجلة</h4><div id="urgent-tasks-container"></div></div><div id="regular-tasks-section"><h4>المهام اليومية</h4><div id="tasks-list-container"></div></div></div></div>
-        <div class="page" id="mine-page"><div class="page-header"><h3>التعدين</h3></div><div class="content-container"><div class="card"><h4>مكافأة كل ساعة</h4><p>احصل على 100 نقطة كل ساعة مجاناً.</p><button id="claim-hourly-btn" class="btn-submit" disabled>جاري التحميل...</button></div><div class="card"><h4>ترقية التعدين (قريباً)</h4><p>قريباً ستتمكن من شراء ترقيات تزيد من أرباحك تلقائياً.</p></div></div></div>
-        <div class="page" id="friends-page"><div class="page-header"><h3>دعوة الأصدقاء</h3></div><div class="content-container"><div class="card"><h4>ادعُ أصدقاءك واربح!</h4><p>لكل صديق ينضم عبر رابطك، ستحصل على مكافأة قدرها <strong class="highlight">5000</strong> نقطة.</p><button class="btn-submit invite-btn"><i class="ri-share-forward-line"></i> مشاركة رابط الدعوة</button></div><div class="card"><h4>إحالاتك</h4><p>لقد قمت بدعوة <strong id="referral-count" class="highlight">0</strong> أصدقاء.</p></div></div></div>
-        <div id="daily-reward-modal" class="modal-overlay"><div class="modal-content"><i class="ri-close-line modal-close-btn"></i><div class="modal-icon-wrapper"><i class="ri-gift-2-fill"></i></div><h3>المكافأة اليومية</h3><p>سجل حضورك يومياً لتربح مكافآت قيمة.</p><div class="reward-status"><div class="streak-info"><i class="ri-calendar-check-line"></i><span><span id="streak-days">0</span> أيام</span></div><div id="reward-countdown">⏳ ...</div></div><button id="claim-reward-btn" class="btn-submit" disabled>المطالبة بالمكافأة</button></div></div>
-        <div id="alert-modal" class="modal-overlay"><div class="modal-content"><div id="alert-icon" class="modal-icon-wrapper"></div><p id="alert-message"></p><button id="alert-close-btn" class="btn-submit">حسناً</button></div></div>
+        <!-- ================= OTHER PAGES ================= -->
+        <div class="page" id="earn-page">
+            <div class="page-header"><h3>اكسب النقاط</h3></div>
+            <div class="content-container">
+                <div id="urgent-tasks-section">
+                    <h4>🔥 مهام عاجلة</h4>
+                    <div id="urgent-tasks-container"></div>
+                </div>
+                <div id="regular-tasks-section">
+                    <h4>المهام اليومية</h4>
+                    <div id="tasks-list-container"></div>
+                </div>
+            </div>
+        </div>
+        <div class="page" id="mine-page">
+            <div class="page-header"><h3>التعدين</h3></div>
+            <div class="content-container">
+                <div class="card">
+                    <h4>مكافأة كل ساعة</h4>
+                    <p>احصل على 100 نقطة كل ساعة مجاناً.</p>
+                    <button id="claim-hourly-btn" class="btn-submit" disabled>جاري التحميل...</button>
+                </div>
+                <div class="card">
+                    <h4>ترقية التعدين (قريباً)</h4>
+                    <p>قريباً ستتمكن من شراء ترقيات تزيد من أرباحك تلقائياً.</p>
+                </div>
+            </div>
+        </div>
+        <div class="page" id="friends-page">
+            <div class="page-header"><h3>دعوة الأصدقاء</h3></div>
+            <div class="content-container">
+                <div class="card">
+                    <h4>ادعُ أصدقاءك واربح!</h4>
+                    <p>لكل صديق ينضم عبر رابطك، ستحصل على مكافأة قدرها <strong class="highlight">5000</strong> نقطة.</p>
+                    <button class="btn-submit invite-btn"><i class="ri-share-forward-line"></i> مشاركة رابط الدعوة</button>
+                </div>
+                <div class="card">
+                    <h4>إحالاتك</h4>
+                    <p>لقد قمت بدعوة <strong id="referral-count" class="highlight">0</strong> أصدقاء.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MODALS ================= -->
+        <div id="daily-reward-modal" class="modal-overlay">
+            <div class="modal-content">
+                <i class="ri-close-line modal-close-btn"></i>
+                <div class="modal-icon-wrapper"><i class="ri-gift-2-fill"></i></div>
+                <h3>المكافأة اليومية</h3>
+                <p>سجل حضورك يومياً لتربح مكافآت قيمة.</p>
+                <div class="reward-status">
+                    <div class="streak-info"><i class="ri-calendar-check-line"></i><span><span id="streak-days">0</span> أيام</span></div>
+                    <div id="reward-countdown">⏳ ...</div>
+                </div>
+                <button id="claim-reward-btn" class="btn-submit" disabled>المطالبة بالمكافأة</button>
+            </div>
+        </div>
+        <div id="alert-modal" class="modal-overlay">
+            <div class="modal-content">
+                <div id="alert-icon" class="modal-icon-wrapper"></div>
+                <p id="alert-message"></p>
+                <button id="alert-close-btn" class="btn-submit">حسناً</button>
+            </div>
+        </div>
         
-        <nav class="bottom-nav"><a href="#" class="nav-link" data-page="exchange-page"><i class="ri-exchange-dollar-line"></i><span>تحويل</span></a><a href="#" class="nav-link" data-page="mine-page"><i class="ri-pickaxe-line"></i><span>تعدين</span></a><a href="#" class="nav-link active" data-page="home-page"><i class="ri-home-4-fill"></i><span>الرئيسية</span></a><a href="#" class="nav-link" data-page="friends-page"><i class="ri-group-line"></i><span>الأصدقاء</span></a><a href="#" class="nav-link" data-page="earn-page"><i class="ri-copper-coin-line"></i><span>اكسب</span></a></nav>
+        <!-- ================= NAVIGATION ================= -->
+        <nav class="bottom-nav">
+            <a href="#" class="nav-link" data-page="exchange-page"><i class="ri-exchange-dollar-line"></i><span>تحويل</span></a>
+            <a href="#" class="nav-link" data-page="mine-page"><i class="ri-pickaxe-line"></i><span>تعدين</span></a>
+            <a href="#" class="nav-link active" data-page="home-page"><i class="ri-home-4-fill"></i><span>الرئيسية</span></a>
+            <a href="#" class="nav-link" data-page="friends-page"><i class="ri-group-line"></i><span>الأصدقاء</span></a>
+            <a href="#" class="nav-link" data-page="earn-page"><i class="ri-copper-coin-line"></i><span>اكسب</span></a>
+        </nav>
     </div>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script><script src="https://telegram.org/js/telegram-web-app.js"></script><script src="app.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
