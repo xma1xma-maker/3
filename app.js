@@ -365,5 +365,5 @@ function startHourlyCountdown(lastClaim) {
     }, 1000);
 }
 
-// ================= START THE APP م=================
+// ================= START THE APP =================
 main();
