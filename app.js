@@ -11,7 +11,6 @@ let db, auth, functions;
 let userId = null, userRef = null, currentUserData = null;
 let dailyCountdownInterval, hourlyCountdownInterval;
 
-// CONVERSION RATE: You can change this
 const POINTS_PER_USDT_UNIT = 1000; 
 const USDT_PER_UNIT = 0.1;
 
@@ -75,7 +74,6 @@ async function initUser(tgUser) {
     const doc = await userRef.get();
     if (!doc.exists) {
         const initialUsername = tgUser?.username || tgUser?.first_name || 'New User';
-        // **FIX: Get user profile photo URL**
         let photoUrl = '';
         if (tgUser?.photo_url) {
             photoUrl = tgUser.photo_url;
@@ -84,7 +82,7 @@ async function initUser(tgUser) {
         await userRef.set({
             telegramId: tgUser?.id ? String(tgUser.id) : 'N/A',
             username: initialUsername,
-            photoUrl: photoUrl, // Store the photo URL
+            photoUrl: photoUrl,
             usdt: 0, localCoin: 0, league: 'برونزي', referrals: 0,
             lastCheckin: null, streak: 0, 
             lastHourlyClaim: null,
@@ -102,21 +100,18 @@ function updateUI(data) {
 
     updateElement('username', username);
     
-    // **FIX: Update avatar image**
     const avatarEl = document.getElementById('user-avatar');
     if (data.photoUrl) {
         avatarEl.src = data.photoUrl;
     } else {
-        // Fallback to a generated avatar if no photo
         avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username )}&background=6D28D9&color=fff&bold=true`;
     }
 
     updateElement('local-coin', localCoin);
     updateElement('home-usdt-balance', usdt);
-    updateElement('league-name', data.league || 'برونزي');
-    updateElement('streak-days', data.streak || 0);
     updateElement('usdt-balance', usdt);
     updateElement('points-balance', localCoin);
+    updateElement('referral-count', data.referrals || 0);
     updateElement('exchange-rate-info', `${POINTS_PER_USDT_UNIT} نقطة = ${USDT_PER_UNIT} USDT`);
     
     startDailyCountdown(data.lastCheckin);
@@ -185,6 +180,8 @@ function bindAllEvents() {
     document.getElementById('alert-close-btn')?.addEventListener('click', () => document.getElementById('alert-modal').classList.remove('show'));
     document.getElementById('convert-points-btn')?.addEventListener('click', handleConvertPoints);
     document.getElementById('withdraw-btn')?.addEventListener('click', handleWithdraw);
+    // **FIX: Bind the gift code button in its new location**
+    document.getElementById('redeem-gift-code-btn')?.addEventListener('click', handleRedeemGiftCode);
     document.querySelector('.invite-btn')?.addEventListener('click', handleInvite);
     document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', (e) => { e.preventDefault(); showPage(link.dataset.page); });
@@ -200,10 +197,9 @@ async function handleClaimDailyReward() {
     if (btn.disabled) return;
     btn.disabled = true;
     try {
-        // **FIX: Update lastCheckin timestamp correctly.**
         await userRef.update({
             localCoin: firebase.firestore.FieldValue.increment(500),
-            lastCheckin: firebase.firestore.FieldValue.serverTimestamp() // This line is the fix.
+            lastCheckin: firebase.firestore.FieldValue.serverTimestamp()
         });
         document.getElementById('daily-reward-modal').classList.remove('show');
         showAlert("تهانينا! لقد حصلت على 500 نقطة.", "success");
@@ -226,6 +222,29 @@ async function handleClaimHourlyReward() {
     } catch (error) {
         showAlert("حدث خطأ ما.", "error");
         btn.disabled = false;
+    }
+}
+
+async function handleRedeemGiftCode() {
+    const input = document.getElementById("gift-code-input");
+    const code = input.value.trim().toUpperCase();
+    if (code === "") return showAlert("الرجاء إدخال الكود.", "error");
+
+    const btn = document.getElementById("redeem-gift-code-btn");
+    btn.disabled = true; btn.innerText = "جاري التحقق...";
+    try {
+        const redeemFunction = functions.httpsCallable('redeemGiftCode' );
+        const result = await redeemFunction({ code: code });
+        if (result.data.success) {
+            showAlert(`تهانينا! لقد ربحت ${result.data.reward} نقطة.`, "success");
+            input.value = "";
+        } else {
+            showAlert(result.data.message, "error");
+        }
+    } catch (error) {
+        showAlert(error.message || "الكود غير صحيح أو منتهي الصلاحية.", "error");
+    } finally {
+        btn.disabled = false; btn.innerText = "تفعيل الكود";
     }
 }
 
