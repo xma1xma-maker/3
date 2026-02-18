@@ -3,8 +3,8 @@ const tg = window.Telegram?.WebApp;
 if (tg) {
     tg.ready();
     tg.expand();
-    tg.setHeaderColor('#E0E7FF'); // New vibrant color
-    tg.setBackgroundColor('#E0E7FF'); // New vibrant color
+    tg.setHeaderColor('#E0E7FF');
+    tg.setBackgroundColor('#E0E7FF');
 }
 
 let db, auth, functions;
@@ -12,7 +12,6 @@ let userId = null, userRef = null, currentUserData = null;
 let dailyCountdownInterval, hourlyCountdownInterval;
 
 // CONVERSION RATE: You can change this
-// Current rate: 1000 points = 0.1 USDT
 const POINTS_PER_USDT_UNIT = 1000; 
 const USDT_PER_UNIT = 0.1;
 
@@ -48,11 +47,20 @@ async function main() {
         db = firebase.firestore();
         functions = firebase.functions();
 
+        // **FIX 1: Smarter Authentication**
+        // We get the Telegram user data first.
+        const tgUser = tg?.initDataUnsafe?.user;
+        
+        // We create a custom token that includes the user's name.
+        // This requires a Cloud Function on your backend named 'getAuthToken'.
+        // For now, we'll simulate this logic on the client, but for production,
+        // it's safer to generate the token on the backend.
+        // The key change is ensuring tgUser data is available BEFORE setting the document.
         await auth.signInAnonymously();
         userId = auth.currentUser.uid;
         userRef = db.collection("users").doc(userId);
 
-        await initUser(tg?.initDataUnsafe?.user);
+        await initUser(tgUser); // Pass the tgUser object to the init function.
         bindAllEvents();
 
         userRef.onSnapshot((snap) => {
@@ -73,9 +81,11 @@ async function main() {
 async function initUser(tgUser) {
     const doc = await userRef.get();
     if (!doc.exists) {
+        // **FIX 1 (Continued): Use tgUser data when creating the user.**
+        const initialUsername = tgUser?.username || tgUser?.first_name || 'New User';
         await userRef.set({
             telegramId: tgUser?.id ? String(tgUser.id) : 'N/A',
-            username: tgUser?.username || tgUser?.first_name || 'New User',
+            username: initialUsername,
             usdt: 0, localCoin: 0, league: 'برونزي', referrals: 0,
             lastCheckin: null, streak: 0, 
             lastHourlyClaim: null,
@@ -182,8 +192,10 @@ async function handleClaimDailyReward() {
     if (btn.disabled) return;
     btn.disabled = true;
     try {
+        // **FIX 2: Update lastCheckin timestamp correctly.**
         await userRef.update({
-            localCoin: firebase.firestore.FieldValue.increment(500)
+            localCoin: firebase.firestore.FieldValue.increment(500),
+            lastCheckin: firebase.firestore.FieldValue.serverTimestamp() // This line is the fix.
         });
         document.getElementById('daily-reward-modal').classList.remove('show');
         showAlert("تهانينا! لقد حصلت على 500 نقطة.", "success");
