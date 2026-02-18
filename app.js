@@ -47,20 +47,13 @@ async function main() {
         db = firebase.firestore();
         functions = firebase.functions();
 
-        // **FIX 1: Smarter Authentication**
-        // We get the Telegram user data first.
         const tgUser = tg?.initDataUnsafe?.user;
         
-        // We create a custom token that includes the user's name.
-        // This requires a Cloud Function on your backend named 'getAuthToken'.
-        // For now, we'll simulate this logic on the client, but for production,
-        // it's safer to generate the token on the backend.
-        // The key change is ensuring tgUser data is available BEFORE setting the document.
         await auth.signInAnonymously();
         userId = auth.currentUser.uid;
         userRef = db.collection("users").doc(userId);
 
-        await initUser(tgUser); // Pass the tgUser object to the init function.
+        await initUser(tgUser);
         bindAllEvents();
 
         userRef.onSnapshot((snap) => {
@@ -81,11 +74,17 @@ async function main() {
 async function initUser(tgUser) {
     const doc = await userRef.get();
     if (!doc.exists) {
-        // **FIX 1 (Continued): Use tgUser data when creating the user.**
         const initialUsername = tgUser?.username || tgUser?.first_name || 'New User';
+        // **FIX: Get user profile photo URL**
+        let photoUrl = '';
+        if (tgUser?.photo_url) {
+            photoUrl = tgUser.photo_url;
+        }
+
         await userRef.set({
             telegramId: tgUser?.id ? String(tgUser.id) : 'N/A',
             username: initialUsername,
+            photoUrl: photoUrl, // Store the photo URL
             usdt: 0, localCoin: 0, league: 'برونزي', referrals: 0,
             lastCheckin: null, streak: 0, 
             lastHourlyClaim: null,
@@ -102,7 +101,16 @@ function updateUI(data) {
     const usdt = Number(data.usdt).toFixed(4);
 
     updateElement('username', username);
-    updateElement('user-avatar', username.charAt(0).toUpperCase());
+    
+    // **FIX: Update avatar image**
+    const avatarEl = document.getElementById('user-avatar');
+    if (data.photoUrl) {
+        avatarEl.src = data.photoUrl;
+    } else {
+        // Fallback to a generated avatar if no photo
+        avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username )}&background=6D28D9&color=fff&bold=true`;
+    }
+
     updateElement('local-coin', localCoin);
     updateElement('home-usdt-balance', usdt);
     updateElement('league-name', data.league || 'برونزي');
@@ -192,7 +200,7 @@ async function handleClaimDailyReward() {
     if (btn.disabled) return;
     btn.disabled = true;
     try {
-        // **FIX 2: Update lastCheckin timestamp correctly.**
+        // **FIX: Update lastCheckin timestamp correctly.**
         await userRef.update({
             localCoin: firebase.firestore.FieldValue.increment(500),
             lastCheckin: firebase.firestore.FieldValue.serverTimestamp() // This line is the fix.
@@ -226,34 +234,23 @@ async function handleConvertPoints() {
     const pointsToConvert = parseInt(input.value);
     const btn = document.getElementById('convert-points-btn');
 
-    if (isNaN(pointsToConvert) || pointsToConvert <= 0) {
-        return showAlert("الرجاء إدخال عدد نقاط صحيح.", "error");
-    }
-    if (!currentUserData || currentUserData.localCoin < pointsToConvert) {
-        return showAlert("رصيد نقاطك غير كافٍ.", "error");
-    }
-    if (pointsToConvert < POINTS_PER_USDT_UNIT) {
-        return showAlert(`الحد الأدنى للتحويل هو ${POINTS_PER_USDT_UNIT} نقطة.`, "error");
-    }
+    if (isNaN(pointsToConvert) || pointsToConvert <= 0) return showAlert("الرجاء إدخال عدد نقاط صحيح.", "error");
+    if (!currentUserData || currentUserData.localCoin < pointsToConvert) return showAlert("رصيد نقاطك غير كافٍ.", "error");
+    if (pointsToConvert < POINTS_PER_USDT_UNIT) return showAlert(`الحد الأدنى للتحويل هو ${POINTS_PER_USDT_UNIT} نقطة.`, "error");
 
-    btn.disabled = true;
-    btn.innerText = "جاري التحويل...";
-
+    btn.disabled = true; btn.innerText = "جاري التحويل...";
     try {
         const usdtToAdd = (pointsToConvert / POINTS_PER_USDT_UNIT) * USDT_PER_UNIT;
-        
         await userRef.update({
             localCoin: firebase.firestore.FieldValue.increment(-pointsToConvert),
             usdt: firebase.firestore.FieldValue.increment(usdtToAdd)
         });
-
         showAlert(`تم تحويل ${pointsToConvert} نقطة بنجاح إلى ${usdtToAdd.toFixed(4)} USDT.`, "success");
         input.value = "";
     } catch (error) {
         showAlert("حدث خطأ أثناء عملية التحويل.", "error");
     } finally {
-        btn.disabled = false;
-        btn.innerText = "تحويل";
+        btn.disabled = false; btn.innerText = "تحويل";
     }
 }
 
@@ -300,40 +297,17 @@ async function fetchAndDisplayTasks() {
 
     try {
         const tasksSnapshot = await db.collection('tasks').orderBy('createdAt', 'desc').get();
-        
-        let urgentHtml = '';
-        let regularHtml = '';
-
+        let urgentHtml = '', regularHtml = '';
         tasksSnapshot.forEach(doc => {
             const task = doc.data();
             const isCompleted = currentUserData.completedTasks?.includes(doc.id);
-            const taskHtml = `
-                <div class="task-item ${isCompleted ? 'completed' : ''} ${task.isUrgent ? 'urgent' : ''}">
-                    <div class="task-icon"><i class="${task.icon || 'ri-star-line'}"></i></div>
-                    <div class="task-details">
-                        <h4>${task.title}</h4>
-                        <p>+${task.reward} نقطة</p>
-                    </div>
-                    <button class="btn-submit task-action-btn" data-task-id="${doc.id}" data-task-link="${task.link}" data-task-reward="${task.reward}" ${isCompleted ? 'disabled' : ''}>
-                        ${isCompleted ? 'مكتملة' : 'اذهب'}
-                    </button>
-                </div>
-            `;
-            if (task.isUrgent) {
-                urgentHtml += taskHtml;
-            } else {
-                regularHtml += taskHtml;
-            }
+            const taskHtml = `<div class="task-item ${isCompleted ? 'completed' : ''} ${task.isUrgent ? 'urgent' : ''}"><div class="task-icon"><i class="${task.icon || 'ri-star-line'}"></i></div><div class="task-details"><h4>${task.title}</h4><p>+${task.reward} نقطة</p></div><button class="btn-submit task-action-btn" data-task-id="${doc.id}" data-task-link="${task.link}" data-task-reward="${task.reward}" ${isCompleted ? 'disabled' : ''}>${isCompleted ? 'مكتملة' : 'اذهب'}</button></div>`;
+            if (task.isUrgent) urgentHtml += taskHtml; else regularHtml += taskHtml;
         });
-
         urgentContainer.innerHTML = urgentHtml || '';
         regularContainer.innerHTML = regularHtml || '<p style="text-align:center; color:var(--text-muted);">لا توجد مهام حالياً.</p>';
-        
         urgentSection.style.display = urgentHtml ? 'block' : 'none';
-
-        document.querySelectorAll('.task-action-btn').forEach(btn => {
-            btn.addEventListener('click', handleTaskAction);
-        });
+        document.querySelectorAll('.task-action-btn').forEach(btn => btn.addEventListener('click', handleTaskAction));
     } catch (error) {
         console.error("Error fetching tasks:", error);
         urgentContainer.innerHTML = '<p style="text-align:center; color:var(--text-muted);">حدث خطأ في جلب المهام.</p>';
@@ -347,12 +321,8 @@ async function handleTaskAction(event) {
     const taskId = btn.dataset.taskId;
     const taskLink = btn.dataset.taskLink;
     const taskReward = parseInt(btn.dataset.taskReward);
-
     tg.openTelegramLink(taskLink);
-
-    btn.disabled = true;
-    btn.innerText = 'التحقق...';
-
+    btn.disabled = true; btn.innerText = 'التحقق...';
     setTimeout(async () => {
         try {
             await userRef.update({
@@ -360,11 +330,10 @@ async function handleTaskAction(event) {
                 completedTasks: firebase.firestore.FieldValue.arrayUnion(taskId)
             });
             showAlert('تم إكمال المهمة بنجاح!', 'success');
-            fetchAndDisplayTasks(); // Refresh tasks list
+            fetchAndDisplayTasks();
         } catch (error) {
             showAlert('فشل التحقق من المهمة.', 'error');
-            btn.disabled = false;
-            btn.innerText = 'اذهب';
+            btn.disabled = false; btn.innerText = 'اذهب';
         }
     }, 5000);
 }
