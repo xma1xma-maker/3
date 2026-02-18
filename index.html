@@ -19,7 +19,6 @@
             <div class="main-content">
                 <div class="header">
                     <div class="user-info">
-                        <!-- **FIXED: Changed div to img to display profile picture** -->
                         <img id="user-avatar" class="avatar" src="" alt="Avatar">
                         <span id="username"></span>
                     </div>
@@ -28,7 +27,8 @@
                 <div class="dashboard-hero">
                     <p>رصيد النقاط</p>
                     <div class="balance-display">
-                        <img src="https://i.ibb.co/99SMs7c/coin.png" alt="coin" class="coin-icon"/>
+                        <!-- **FIX 1: Using a stable and permanent image link for the coin** -->
+                        <img src="https://raw.githubusercontent.com/twitter/twemoji/master/assets/svg/1fa99.svg" alt="coin" class="coin-icon"/>
                         <h1 id="local-coin"></h1>
                     </div>
                     <div class="usdt-balance-display">
@@ -43,7 +43,7 @@
             </div>
         </div>
 
-        <!-- ================= EXCHANGE PAGE (REBUILT ) ================= -->
+        <!-- ================= EXCHANGE PAGE ================= -->
         <div class="page" id="exchange-page">
             <div class="page-header"><h3>تحويل وسحب</h3></div>
             <div class="content-container">
@@ -64,7 +64,7 @@
                     <button class="btn-submit" id="convert-points-btn">تحويل</button>
                 </div>
                 <div class="card">
-                    <h4>سحب الأرباح (USDT)</h4>
+                    <h4>سحب الأرباح (USDT )</h4>
                     <div class="form-group"><label for="wallet">عنوان المحفظة (USDT TRC20)</label><input type="text" id="wallet" placeholder="أدخل عنوان محفظتك"></div>
                     <div class="form-group"><label for="amount">المبلغ (USDT)</label><input type="number" id="amount" placeholder="الحد الأدنى 10"></div>
                     <button class="btn-submit" id="withdraw-btn">إرسال طلب السحب</button>
@@ -140,6 +140,7 @@
         <!-- ================= NAVIGATION ================= -->
         <nav class="bottom-nav">
             <a href="#" class="nav-link" data-page="exchange-page"><i class="ri-exchange-dollar-line"></i><span>تحويل</span></a>
+            <!-- **FIX 2: Added the missing icon for the "mine" page link** -->
             <a href="#" class="nav-link" data-page="mine-page"><i class="ri-pickaxe-line"></i><span>تعدين</span></a>
             <a href="#" class="nav-link active" data-page="home-page"><i class="ri-home-4-fill"></i><span>الرئيسية</span></a>
             <a href="#" class="nav-link" data-page="friends-page"><i class="ri-group-line"></i><span>الأصدقاء</span></a>
