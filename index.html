@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Task Platform</title>
+    <title data-i18n="appName">Quest Bot</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Added Poppins font for English -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet"/>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -22,101 +23,104 @@
                         <img id="user-avatar" class="avatar" src="" alt="Avatar">
                         <span id="username"></span>
                     </div>
-                    <div class="icon-box" id="daily-reward-icon"><i class="ri-gift-line"></i></div>
+                    <!-- Container for header icons -->
+                    <div class="header-icons">
+                        <div class="icon-box" id="language-switcher"><i class="ri-global-line"></i></div>
+                        <div class="icon-box" id="daily-reward-icon"><i class="ri-gift-line"></i></div>
+                    </div>
                 </div>
                 <div class="dashboard-hero">
-                    <p>رصيد النقاط</p>
+                    <p data-i18n="points_balance">رصيد النقاط</p>
                     <div class="balance-display">
                         <img src="https://raw.githubusercontent.com/twitter/twemoji/master/assets/svg/1fa99.svg" alt="coin" class="coin-icon"/>
-                        <h1 id="local-coin"></h1>
+                        <h1 id="local-coin">0</h1>
                     </div>
                     <div class="usdt-balance-display">
-                        رصيد الدولار: $<span id="home-usdt-balance"></span>
+                        <span data-i18n="usdt_balance">رصيد الدولار</span>: $<span id="home-usdt-balance">0.0000</span>
                     </div>
                 </div>
                 <div class="quick-actions">
-                    <div class="action-card" data-page="earn-page"><i class="ri-copper-coin-line"></i><span>اكسب النقاط</span></div>
-                    <div class="action-card" data-page="friends-page"><i class="ri-group-line"></i><span>ادعُ الأصدقاء</span></div>
-                    <div class="action-card" data-page="exchange-page"><i class="ri-exchange-dollar-line"></i><span>تحويل وسحب</span></div>
+                    <div class="action-card" data-page="earn-page"><i class="ri-copper-coin-line"></i><span data-i18n="earn_points">اكسب النقاط</span></div>
+                    <div class="action-card" data-page="friends-page"><i class="ri-group-line"></i><span data-i18n="invite_friends">ادعُ الأصدقاء</span></div>
+                    <div class="action-card" data-page="exchange-page"><i class="ri-exchange-dollar-line"></i><span data-i18n="exchange_withdraw">تحويل وسحب</span></div>
                 </div>
             </div>
         </div>
 
-        <!-- ================= REWARDS PAGE (Formerly Mine Page ) ================= -->
+        <!-- ================= REWARDS PAGE ================= -->
         <div class="page" id="mine-page">
-            <div class="page-header"><h3>المكافآت</h3></div>
+            <div class="page-header"><h3 data-i18n="rewards_title">المكافآت</h3></div>
             <div class="content-container">
                 <div class="card">
                     <div class="reward-card-content">
                         <i class="ri-time-line"></i>
                         <div>
-                            <h4>مكافأة كل ساعة</h4>
-                            <p>احصل على 100 نقطة كل ساعة مجاناً.</p>
+                            <h4 data-i18n="hourly_reward_title">مكافأة كل ساعة</h4>
+                            <p data-i18n="hourly_reward_desc">احصل على 100 نقطة كل ساعة مجاناً.</p>
                         </div>
                     </div>
-                    <button id="claim-hourly-btn" class="btn-submit" disabled>جاري التحميل...</button>
+                    <button id="claim-hourly-btn" class="btn-submit" disabled data-i18n="loading">جاري التحميل...</button>
                 </div>
                 <div class="card">
                     <div class="reward-card-content">
                         <i class="ri-coupon-3-line"></i>
                         <div>
-                            <h4>كود الهدية</h4>
-                            <p>أدخل الكود الذي حصلت عليه من القناة.</p>
+                            <h4 data-i18n="gift_code_title">كود الهدية</h4>
+                            <p data-i18n="gift_code_desc">أدخل الكود الذي حصلت عليه من القناة.</p>
                         </div>
                     </div>
                     <div class="form-group" style="margin-top: 16px;">
-                        <input type="text" id="gift-code-input" placeholder="XXXX-XXXX">
+                        <input type="text" id="gift-code-input" data-i18n-placeholder="gift_code_placeholder">
                     </div>
-                    <button class="btn-submit" id="redeem-gift-code-btn">تفعيل الكود</button>
+                    <button class="btn-submit" id="redeem-gift-code-btn" data-i18n="redeem_code">تفعيل الكود</button>
                 </div>
             </div>
         </div>
 
         <!-- ================= EXCHANGE PAGE ================= -->
         <div class="page" id="exchange-page">
-            <div class="page-header"><h3>تحويل وسحب</h3></div>
+            <div class="page-header"><h3 data-i18n="exchange_title">تحويل وسحب</h3></div>
             <div class="content-container">
                 <div class="card">
-                    <h4>رصيدك الحالي</h4>
+                    <h4 data-i18n="your_current_balance">رصيدك الحالي</h4>
                     <div class="balance-summary">
-                        <div><i class="ri-copper-coin-fill"></i> النقاط: <strong id="points-balance"></strong></div>
-                        <div><i class="ri-money-dollar-circle-fill"></i> USDT: <strong id="usdt-balance"></strong></div>
+                        <div><i class="ri-copper-coin-fill"></i> <span data-i18n="points">النقاط</span>: <strong id="points-balance">0</strong></div>
+                        <div><i class="ri-money-dollar-circle-fill"></i> USDT: <strong id="usdt-balance">0.0000</strong></div>
                     </div>
                 </div>
                 <div class="card">
-                    <h4>تحويل النقاط إلى USDT</h4>
-                    <p>سعر الصرف الحالي: <strong class="highlight" id="exchange-rate-info"></strong></p>
+                    <h4 data-i18n="convert_points_to_usdt">تحويل النقاط إلى USDT</h4>
+                    <p><span data-i18n="exchange_rate_info">سعر الصرف الحالي:</span> <strong class="highlight" id="exchange-rate-info-text"></strong></p>
                     <div class="form-group">
-                        <label for="points-to-convert">النقاط المراد تحويلها</label>
-                        <input type="number" id="points-to-convert" placeholder="أدخل عدد النقاط">
+                        <label for="points-to-convert" data-i18n="points_to_convert">النقاط المراد تحويلها</label>
+                        <input type="number" id="points-to-convert" data-i18n-placeholder="enter_points_amount">
                     </div>
-                    <button class="btn-submit" id="convert-points-btn">تحويل</button>
+                    <button class="btn-submit" id="convert-points-btn" data-i18n="convert_button">تحويل</button>
                 </div>
                 <div class="card">
-                    <h4>سحب الأرباح (USDT)</h4>
-                    <div class="form-group"><label for="wallet">عنوان المحفظة (USDT TRC20)</label><input type="text" id="wallet" placeholder="أدخل عنوان محفظتك"></div>
-                    <div class="form-group"><label for="amount">المبلغ (USDT)</label><input type="number" id="amount" placeholder="الحد الأدنى 10"></div>
-                    <button class="btn-submit" id="withdraw-btn">إرسال طلب السحب</button>
+                    <h4 data-i18n="withdraw_earnings">سحب الأرباح (USDT )</h4>
+                    <div class="form-group"><label for="wallet" data-i18n="wallet_address">عنوان المحفظة (USDT TRC20)</label><input type="text" id="wallet" data-i18n-placeholder="enter_wallet_address"></div>
+                    <div class="form-group"><label for="amount" data-i18n="amount_usdt">المبلغ (USDT)</label><input type="number" id="amount" data-i18n-placeholder="min_10_usdt"></div>
+                    <button class="btn-submit" id="withdraw-btn" data-i18n="submit_withdrawal_request">إرسال طلب السحب</button>
                 </div>
             </div>
         </div>
         
         <!-- ================= OTHER PAGES ================= -->
-        <div class="page" id="earn-page"><div class="page-header"><h3>اكسب النقاط</h3></div><div class="content-container"><div id="urgent-tasks-section"><h4>🔥 مهام عاجلة</h4><div id="urgent-tasks-container"></div></div><div id="regular-tasks-section"><h4>المهام اليومية</h4><div id="tasks-list-container"></div></div></div></div>
-        <div class="page" id="friends-page"><div class="page-header"><h3>دعوة الأصدقاء</h3></div><div class="content-container"><div class="card"><h4>ادعُ أصدقاءك واربح!</h4><p>لكل صديق ينضم عبر رابطك، ستحصل على مكافأة قدرها <strong class="highlight">5000</strong> نقطة.</p><button class="btn-submit invite-btn"><i class="ri-share-forward-line"></i> مشاركة رابط الدعوة</button></div><div class="card"><h4>إحالاتك</h4><p>لقد قمت بدعوة <strong id="referral-count" class="highlight">0</strong> أصدقاء.</p></div></div></div>
+        <div class="page" id="earn-page"><div class="page-header"><h3 data-i18n="earn_title">اكسب النقاط</h3></div><div class="content-container"><div id="urgent-tasks-section"><h4 data-i18n="urgent_tasks">🔥 مهام عاجلة</h4><div id="urgent-tasks-container"></div></div><div id="regular-tasks-section"><h4 data-i18n="daily_tasks">المهام اليومية</h4><div id="tasks-list-container"></div></div></div></div>
+        <div class="page" id="friends-page"><div class="page-header"><h3 data-i18n="friends_title">دعوة الأصدقاء</h3></div><div class="content-container"><div class="card"><h4 data-i18n="invite_and_earn">ادعُ أصدقاءك واربح!</h4><p><span data-i18n="invite_desc">لكل صديق ينضم عبر رابطك، ستحصل على مكافأة قدرها</span> <strong class="highlight">5000</strong> <span data-i18n="points">نقطة</span>.</p><button class="btn-submit invite-btn"><i class="ri-share-forward-line"></i> <span data-i18n="invite_share_button">مشاركة رابط الدعوة</span></button></div><div class="card"><h4 data-i18n="your_referrals">إحالاتك</h4><p><span data-i18n="referral_count_text">لقد قمت بدعوة</span> <strong id="referral-count" class="highlight">0</strong> <span data-i18n="friends_suffix">أصدقاء.</span></p></div></div></div>
 
         <!-- ================= MODALS ================= -->
-        <div id="daily-reward-modal" class="modal-overlay"><div class="modal-content"><i class="ri-close-line modal-close-btn"></i><div class="modal-icon-wrapper"><i class="ri-gift-2-fill"></i></div><h3>المكافأة اليومية</h3><p>سجل حضورك يومياً لتربح مكافآت قيمة.</p><div class="reward-status"><div class="streak-info"><i class="ri-calendar-check-line"></i><span><span id="streak-days">0</span> أيام</span></div><div id="reward-countdown">⏳ ...</div></div><button id="claim-reward-btn" class="btn-submit" disabled>المطالبة بالمكافأة</button></div></div>
-        <div id="alert-modal" class="modal-overlay"><div class="modal-content"><div id="alert-icon" class="modal-icon-wrapper"></div><p id="alert-message"></p><button id="alert-close-btn" class="btn-submit">حسناً</button></div></div>
+        <div id="daily-reward-modal" class="modal-overlay"><div class="modal-content"><i class="ri-close-line modal-close-btn"></i><div class="modal-icon-wrapper"><i class="ri-gift-2-fill"></i></div><h3 data-i18n="daily_reward_title">المكافأة اليومية</h3><p data-i18n="daily_reward_desc">سجل حضورك يومياً لتربح مكافآت قيمة.</p><div class="reward-status"><div class="streak-info"><i class="ri-calendar-check-line"></i><span><span id="streak-days">0</span> <span data-i18n="days_streak">أيام</span></span></div><div id="reward-countdown">⏳ ...</div></div><button id="claim-reward-btn" class="btn-submit" disabled data-i18n="claim_reward">المطالبة بالمكافأة</button></div></div>
+        <div id="alert-modal" class="modal-overlay"><div class="modal-content"><div id="alert-icon" class="modal-icon-wrapper"></div><p id="alert-message"></p><button id="alert-close-btn" class="btn-submit" data-i18n="ok">حسناً</button></div></div>
         
         <!-- ================= NAVIGATION ================= -->
         <nav class="bottom-nav">
-            <a href="#" class="nav-link" data-page="exchange-page"><i class="ri-exchange-dollar-line"></i><span>تحويل</span></a>
-            <!-- **FIXED: Added the missing icon and corrected the text** -->
-            <a href="#" class="nav-link" data-page="mine-page"><i class="ri-gift-line"></i><span>المكافآت</span></a>
-            <a href="#" class="nav-link active" data-page="home-page"><i class="ri-home-4-fill"></i><span>الرئيسية</span></a>
-            <a href="#" class="nav-link" data-page="friends-page"><i class="ri-group-line"></i><span>الأصدقاء</span></a>
-            <a href="#" class="nav-link" data-page="earn-page"><i class="ri-copper-coin-line"></i><span>اكسب</span></a>
+            <a href="#" class="nav-link" data-page="exchange-page"><i class="ri-exchange-dollar-line"></i><span data-i18n="nav_exchange">تحويل</span></a>
+            <a href="#" class="nav-link" data-page="mine-page"><i class="ri-gift-line"></i><span data-i18n="nav_rewards">المكافآت</span></a>
+            <a href="#" class="nav-link active" data-page="home-page"><i class="ri-home-4-fill"></i><span data-i18n="nav_home">الرئيسية</span></a>
+            <a href="#" class="nav-link" data-page="friends-page"><i class="ri-group-line"></i><span data-i18n="nav_friends">الأصدقاء</span></a>
+            <a href="#" class="nav-link" data-page="earn-page"><i class="ri-copper-coin-line"></i><span data-i18n="nav_earn">اكسب</span></a>
         </nav>
     </div>
 
@@ -125,6 +129,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- IMPORTANT: Add the new languages file -->
+    <script src="languages.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
