@@ -299,7 +299,7 @@ async function handleWithdraw() {
 }
 
 function handleInvite() {
-    const botUsername = "gdkmgkdbot"; // استبدل باسم بوتك
+    const botUsername = "Qqk_bot"; // استبدل باسم بوتك
     const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
     const shareText = `💰 انضم إلى هذا البوت الرائع واربح مكافآت! 💰\n\n${inviteLink}`;
     tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent(shareText)}`);
