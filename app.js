@@ -102,40 +102,26 @@ async function main() {
         }
         // =======================================================
 
-        // **CRITICAL FIX FOR USER ISOLATION**
-        // Use onAuthStateChanged to handle user sessions correctly.
-        auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                // User is signed in.
-                userId = user.uid;
-                userRef = db.collection("users").doc(userId);
+        // **CRITICAL FIX: Force sign out, then sign in again.**
+        await auth.signOut();
+        const userCredential = await auth.signInAnonymously();
+        
+        userId = userCredential.user.uid;
+        userRef = db.collection("users").doc(userId);
 
-                await initUser(tgUser, initialLang); 
-                bindAllEvents(); // Bind events once after user is confirmed
+        // Initialize the user document
+        await initUser(tgUser, initialLang); 
+        
+        bindAllEvents();
 
-                userRef.onSnapshot((snap) => {
-                    if (snap.exists) {
-                        currentUserData = snap.data();
-                        if (currentUserData.language && currentUserData.language !== currentLanguage) {
-                            setLanguage(currentUserData.language);
-                        }
-                        updateUI(currentUserData);
-                        showLoader(false);
-                    } else {
-                        showLoader(false);
-                        showAlert(i18n('error_occurred'), 'error');
-                    }
-                });
-            } else {
-                // No user is signed in, so sign them in anonymously.
-                try {
-                    await auth.signInAnonymously();
-                    // The onAuthStateChanged listener will re-run with the new user.
-                } catch (error) {
-                    console.error("Anonymous sign-in failed:", error);
-                    showAlert(i18n('error_occurred'), "error");
-                    showLoader(false);
+        userRef.onSnapshot((snap) => {
+            if (snap.exists) {
+                currentUserData = snap.data();
+                if (currentUserData.language && currentUserData.language !== currentLanguage) {
+                    setLanguage(currentUserData.language);
                 }
+                updateUI(currentUserData);
+                showLoader(false);
             }
         });
 
@@ -149,6 +135,7 @@ async function main() {
 // ================= CORE FUNCTIONS =================
 async function initUser(tgUser, initialLang) {
     const doc = await userRef.get();
+    
     if (!doc.exists) {
         const initialUsername = tgUser?.username || tgUser?.first_name || 'New User';
         let photoUrl = tgUser?.photo_url || '';
@@ -166,6 +153,7 @@ async function initUser(tgUser, initialLang) {
         }, { merge: true });
     }
 }
+
 
 // A flag to ensure events are bound only once
 let eventsBound = false; 
@@ -190,9 +178,6 @@ function bindAllEvents() {
         card.addEventListener('click', () => showPage(card.dataset.page));
     });
 }
-
-// The rest of the file remains the same...
-// (I'm including the full code for completeness)
 
 function updateUI(data) {
     if (!data) return;
@@ -411,11 +396,13 @@ async function handleWithdraw() {
     }
 }
 
+// **MODIFIED FUNCTION TO SHARE A FIXED MESSAGE**
 function handleInvite() {
-    const botUsername = "Qqk_bot";
-    const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
-    const shareText = `💰 ${i18n('invite_and_earn'  )} 💰\n\n${inviteLink}`;
-    tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink  )}&text=${encodeURIComponent(shareText)}`);
+    const botLink = "https://t.me/Qqk_bot";
+    const shareText = "اربح معنا الان"; // The fixed text you requested
+    
+    // This opens the Telegram share dialog with the fixed URL and text.
+    tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botLink )}&text=${encodeURIComponent(shareText)}`);
 }
 
 async function fetchAndDisplayTasks() {
