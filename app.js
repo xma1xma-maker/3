@@ -16,7 +16,7 @@ let dailyCountdownInterval, hourlyCountdownInterval;
 let AdController = null; // AdsGram Controller
 let currentLanguage = 'ar'; // Default language
 
-const POINTS_PER_USDT_UNIT = 1000;
+const POINTS_PER_USDT_UNIT = 1000; 
 const USDT_PER_UNIT = 0.1;
 
 // ================= TRANSLATION FUNCTIONS =================
@@ -77,11 +77,10 @@ function showAlert(message, type = 'success') {
 
 // ================= APP ENTRY POINT =================
 async function main() {
-    // **FIX: Set initial language immediately based on browser/telegram language**
     const tgUser = tg?.initDataUnsafe?.user;
     const initialLang = tgUser?.language_code === 'ar' ? 'ar' : 'en';
     setLanguage(initialLang);
-
+    
     showLoader(true);
     try {
         const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
@@ -89,45 +88,59 @@ async function main() {
         auth = firebase.auth();
         db = firebase.firestore();
         functions = firebase.functions();
-
+        
         // ================= ADSGRAM INITIALIZATION =================
         try {
             if (window.Adsgram) {
-                // Initialize the AdController and store it in the global scope
                 AdController = window.Adsgram.init({ blockId: "int-23433" });
                 console.log("AdsGram SDK Initialized successfully.");
             } else {
-                console.error("AdsGram SDK (window.Adsgram) not found. Make sure the script is loaded before this script.");
+                console.error("AdsGram SDK (window.Adsgram) not found.");
             }
         } catch (e) {
             console.error("Error initializing AdsGram SDK:", e);
         }
         // =======================================================
 
-        await auth.signInAnonymously();
-        userId = auth.currentUser.uid;
-        userRef = db.collection("users").doc(userId);
+        // **CRITICAL FIX FOR USER ISOLATION**
+        // Use onAuthStateChanged to handle user sessions correctly.
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                // User is signed in.
+                userId = user.uid;
+                userRef = db.collection("users").doc(userId);
 
-        await initUser(tgUser, initialLang); // Pass initial language to user creation
-        bindAllEvents();
+                await initUser(tgUser, initialLang); 
+                bindAllEvents(); // Bind events once after user is confirmed
 
-        userRef.onSnapshot((snap) => {
-            if (snap.exists) {
-                currentUserData = snap.data();
-                // **FIX: Update language only if it's different from the current one**
-                if (currentUserData.language && currentUserData.language !== currentLanguage) {
-                    setLanguage(currentUserData.language);
-                }
-                updateUI(currentUserData);
-                showLoader(false); // Loader is hidden here, after the first successful data load
+                userRef.onSnapshot((snap) => {
+                    if (snap.exists) {
+                        currentUserData = snap.data();
+                        if (currentUserData.language && currentUserData.language !== currentLanguage) {
+                            setLanguage(currentUserData.language);
+                        }
+                        updateUI(currentUserData);
+                        showLoader(false);
+                    } else {
+                        showLoader(false);
+                        showAlert(i18n('error_occurred'), 'error');
+                    }
+                });
             } else {
-                // This case might happen if the document is deleted.
-                showLoader(false);
-                showAlert(i18n('error_occurred'), 'error');
+                // No user is signed in, so sign them in anonymously.
+                try {
+                    await auth.signInAnonymously();
+                    // The onAuthStateChanged listener will re-run with the new user.
+                } catch (error) {
+                    console.error("Anonymous sign-in failed:", error);
+                    showAlert(i18n('error_occurred'), "error");
+                    showLoader(false);
+                }
             }
         });
+
     } catch (error) {
-        console.error("Critical Error:", error);
+        console.error("Critical Error during initialization:", error);
         showAlert(i18n('error_occurred'), "error");
         showLoader(false);
     }
@@ -144,15 +157,42 @@ async function initUser(tgUser, initialLang) {
             telegramId: tgUser?.id ? String(tgUser.id) : 'N/A',
             username: initialUsername,
             photoUrl: photoUrl,
-            language: initialLang, // Use the detected language for new users
+            language: initialLang,
             usdt: 0, localCoin: 0, referrals: 0,
-            lastCheckin: null, streak: 0,
+            lastCheckin: null, streak: 0, 
             lastHourlyClaim: null,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             completedTasks: [], redeemedCodes: []
         }, { merge: true });
     }
 }
+
+// A flag to ensure events are bound only once
+let eventsBound = false; 
+function bindAllEvents() {
+    if (eventsBound) return; // Prevent re-binding events
+    eventsBound = true;
+
+    document.getElementById('language-switcher')?.addEventListener('click', handleLanguageSwitch);
+    document.getElementById('daily-reward-icon')?.addEventListener('click', () => document.getElementById('daily-reward-modal').classList.add('show'));
+    document.querySelector('#daily-reward-modal .modal-close-btn')?.addEventListener('click', () => document.getElementById('daily-reward-modal').classList.remove('show'));
+    document.getElementById('claim-reward-btn')?.addEventListener('click', handleClaimDailyReward);
+    document.getElementById('claim-hourly-btn')?.addEventListener('click', handleClaimHourlyReward);
+    document.getElementById('alert-close-btn')?.addEventListener('click', () => document.getElementById('alert-modal').classList.remove('show'));
+    document.getElementById('convert-points-btn')?.addEventListener('click', handleConvertPoints);
+    document.getElementById('withdraw-btn')?.addEventListener('click', handleWithdraw);
+    document.getElementById('redeem-gift-code-btn')?.addEventListener('click', handleRedeemGiftCode);
+    document.querySelector('.invite-btn')?.addEventListener('click', handleInvite);
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', (e) => { e.preventDefault(); showPage(link.dataset.page); });
+    });
+    document.querySelectorAll('.action-card').forEach(card => {
+        card.addEventListener('click', () => showPage(card.dataset.page));
+    });
+}
+
+// The rest of the file remains the same...
+// (I'm including the full code for completeness)
 
 function updateUI(data) {
     if (!data) return;
@@ -161,11 +201,11 @@ function updateUI(data) {
     const usdt = Number(data.usdt).toFixed(4);
 
     updateElement('username', username);
-
+    
     const avatarEl = document.getElementById('user-avatar');
     if (data.photoUrl) {
         avatarEl.src = data.photoUrl;
-        avatarEl.onerror = () => { // Fallback if the photo URL fails
+        avatarEl.onerror = () => {
             avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username  )}&background=6D28D9&color=fff&bold=true`;
         };
     } else {
@@ -177,15 +217,14 @@ function updateUI(data) {
     updateElement('usdt-balance', usdt);
     updateElement('points-balance', localCoin);
     updateElement('referral-count', data.referrals || 0);
-
+    
     const exchangeRateText = `${POINTS_PER_USDT_UNIT} ${i18n('points')} = ${USDT_PER_UNIT} USDT`;
     document.getElementById('exchange-rate-info-text').innerText = exchangeRateText;
-
+    
     startDailyCountdown(data.lastCheckin);
     startHourlyCountdown(data.lastHourlyClaim);
 }
 
-// ================= COUNTDOWN FUNCTIONS =================
 function startDailyCountdown(lastCheckin) {
     const el = document.getElementById("reward-countdown");
     const btn = document.getElementById("claim-reward-btn");
@@ -238,15 +277,12 @@ function startHourlyCountdown(lastClaim) {
     }, 1000);
 }
 
-// ================= ADSGRAM FUNCTION =================
 function showInterstitialAd() {
     if (!AdController) {
         console.log("AdController not initialized. Skipping ad.");
         return;
     }
     console.log("Attempting to show Interstitial Ad...");
-    // The show() promise resolves if the ad is closed or watched to the end.
-    // It rejects if an error occurs.
     AdController.show().then(result => {
         console.log("AdsGram ad shown or closed:", result);
     }).catch(error => {
@@ -254,27 +290,6 @@ function showInterstitialAd() {
     });
 }
 
-// ================= EVENT BINDING =================
-function bindAllEvents() {
-    document.getElementById('language-switcher')?.addEventListener('click', handleLanguageSwitch);
-    document.getElementById('daily-reward-icon')?.addEventListener('click', () => document.getElementById('daily-reward-modal').classList.add('show'));
-    document.querySelector('#daily-reward-modal .modal-close-btn')?.addEventListener('click', () => document.getElementById('daily-reward-modal').classList.remove('show'));
-    document.getElementById('claim-reward-btn')?.addEventListener('click', handleClaimDailyReward);
-    document.getElementById('claim-hourly-btn')?.addEventListener('click', handleClaimHourlyReward);
-    document.getElementById('alert-close-btn')?.addEventListener('click', () => document.getElementById('alert-modal').classList.remove('show'));
-    document.getElementById('convert-points-btn')?.addEventListener('click', handleConvertPoints);
-    document.getElementById('withdraw-btn')?.addEventListener('click', handleWithdraw);
-    document.getElementById('redeem-gift-code-btn')?.addEventListener('click', handleRedeemGiftCode);
-    document.querySelector('.invite-btn')?.addEventListener('click', handleInvite);
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.addEventListener('click', (e) => { e.preventDefault(); showPage(link.dataset.page); });
-    });
-    document.querySelectorAll('.action-card').forEach(card => {
-        card.addEventListener('click', () => showPage(card.dataset.page));
-    });
-}
-
-// ================= EVENT HANDLERS =================
 async function handleLanguageSwitch() {
     const newLang = currentLanguage === 'ar' ? 'en' : 'ar';
     setLanguage(newLang);
@@ -298,7 +313,7 @@ async function handleClaimDailyReward() {
         });
         document.getElementById('daily-reward-modal').classList.remove('show');
         showAlert(i18n('congrats_points', {points: 500}), "success");
-        showInterstitialAd(); // Show ad after claiming daily reward
+        showInterstitialAd();
     } catch (error) {
         showAlert(i18n('error_occurred'), "error");
         btn.disabled = false;
@@ -315,7 +330,7 @@ async function handleClaimHourlyReward() {
             lastHourlyClaim: firebase.firestore.FieldValue.serverTimestamp()
         });
         showAlert(i18n('congrats_points', {points: 100}), "success");
-        showInterstitialAd(); // Show ad after claiming hourly reward
+        showInterstitialAd();
     } catch (error) {
         showAlert(i18n('error_occurred'), "error");
         btn.disabled = false;
@@ -336,7 +351,7 @@ async function handleRedeemGiftCode() {
             showAlert(`${i18n('congrats_points')} ${result.data.reward} ${i18n('points')}`, "success");
             input.value = "";
         } else {
-            showAlert(result.data.message, "error"); // Message from backend is already translated
+            showAlert(result.data.message, "error");
         }
     } catch (error) {
         showAlert(error.message || i18n('code_invalid'), "error");
@@ -362,7 +377,7 @@ async function handleConvertPoints() {
             usdt: firebase.firestore.FieldValue.increment(usdtToAdd)
         });
         showAlert(`${pointsToConvert} ${i18n('points')} ${i18n('conversion_success')} ${usdtToAdd.toFixed(4)} USDT.`, "success");
-        showInterstitialAd(); // Show ad after converting points
+        showInterstitialAd();
         input.value = "";
     } catch (error) {
         showAlert(i18n('error_occurred'), "error");
@@ -377,7 +392,7 @@ async function handleWithdraw() {
     if (isNaN(amount) || amount < 10) return showAlert(`${i18n('min_10_usdt')} USDT.`, "error");
     if (wallet.length < 10) return showAlert(i18n('enter_wallet_address'), "error");
     if (!currentUserData || currentUserData.usdt < amount) return showAlert(i18n('usdt_balance'), "error");
-
+    
     const btn = document.getElementById('withdraw-btn');
     btn.disabled = true; btn.innerText = i18n('loading');
     try {
@@ -397,13 +412,12 @@ async function handleWithdraw() {
 }
 
 function handleInvite() {
-    const botUsername = "Qqk_bot"; // استبدل باسم بوتك
+    const botUsername = "Qqk_bot";
     const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
     const shareText = `💰 ${i18n('invite_and_earn'  )} 💰\n\n${inviteLink}`;
     tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink  )}&text=${encodeURIComponent(shareText)}`);
 }
 
-// ================= TASKS FUNCTIONS =================
 async function fetchAndDisplayTasks() {
     const urgentContainer = document.getElementById('urgent-tasks-container');
     const regularContainer = document.getElementById('tasks-list-container');
