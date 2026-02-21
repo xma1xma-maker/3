@@ -1,6 +1,11 @@
+// ================= ADSGRAM INTEGRATION =================
+// IMPORTANT: Make sure to add this script tag to your HTML file's <head> section
+// <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+// =======================================================
+
 // ================= TELEGRAM & GLOBAL STATE =================
 const tg = window.Telegram?.WebApp;
-if (tg) {
+if (tg ) {
     tg.ready();
     tg.expand();
 }
@@ -8,9 +13,10 @@ if (tg) {
 let db, auth, functions;
 let userId = null, userRef = null, currentUserData = null;
 let dailyCountdownInterval, hourlyCountdownInterval;
+let AdController = null; // AdsGram Controller
 let currentLanguage = 'ar'; // Default language
 
-const POINTS_PER_USDT_UNIT = 1000; 
+const POINTS_PER_USDT_UNIT = 1000;
 const USDT_PER_UNIT = 0.1;
 
 // ================= TRANSLATION FUNCTIONS =================
@@ -75,7 +81,7 @@ async function main() {
     const tgUser = tg?.initDataUnsafe?.user;
     const initialLang = tgUser?.language_code === 'ar' ? 'ar' : 'en';
     setLanguage(initialLang);
-    
+
     showLoader(true);
     try {
         const firebaseConfig = { apiKey: "AIzaSyD5YAKC8KO5jKHQdsdrA8Bm-ERD6yUdHBQ", authDomain: "tele-follow.firebaseapp.com", projectId: "tele-follow", storageBucket: "tele-follow.firebasestorage.app", messagingSenderId: "311701431089", appId: "1:311701431089:web:fcba431dcae893a87cc610" };
@@ -83,7 +89,21 @@ async function main() {
         auth = firebase.auth();
         db = firebase.firestore();
         functions = firebase.functions();
-        
+
+        // ================= ADSGRAM INITIALIZATION =================
+        try {
+            if (window.Adsgram) {
+                // Initialize the AdController and store it in the global scope
+                AdController = window.Adsgram.init({ blockId: "int-23433" });
+                console.log("AdsGram SDK Initialized successfully.");
+            } else {
+                console.error("AdsGram SDK (window.Adsgram) not found. Make sure the script is loaded before this script.");
+            }
+        } catch (e) {
+            console.error("Error initializing AdsGram SDK:", e);
+        }
+        // =======================================================
+
         await auth.signInAnonymously();
         userId = auth.currentUser.uid;
         userRef = db.collection("users").doc(userId);
@@ -126,7 +146,7 @@ async function initUser(tgUser, initialLang) {
             photoUrl: photoUrl,
             language: initialLang, // Use the detected language for new users
             usdt: 0, localCoin: 0, referrals: 0,
-            lastCheckin: null, streak: 0, 
+            lastCheckin: null, streak: 0,
             lastHourlyClaim: null,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             completedTasks: [], redeemedCodes: []
@@ -141,15 +161,15 @@ function updateUI(data) {
     const usdt = Number(data.usdt).toFixed(4);
 
     updateElement('username', username);
-    
+
     const avatarEl = document.getElementById('user-avatar');
     if (data.photoUrl) {
         avatarEl.src = data.photoUrl;
         avatarEl.onerror = () => { // Fallback if the photo URL fails
-            avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username )}&background=6D28D9&color=fff&bold=true`;
+            avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username  )}&background=6D28D9&color=fff&bold=true`;
         };
     } else {
-        avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username )}&background=6D28D9&color=fff&bold=true`;
+        avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(username  )}&background=6D28D9&color=fff&bold=true`;
     }
 
     updateElement('local-coin', localCoin);
@@ -157,10 +177,10 @@ function updateUI(data) {
     updateElement('usdt-balance', usdt);
     updateElement('points-balance', localCoin);
     updateElement('referral-count', data.referrals || 0);
-    
+
     const exchangeRateText = `${POINTS_PER_USDT_UNIT} ${i18n('points')} = ${USDT_PER_UNIT} USDT`;
     document.getElementById('exchange-rate-info-text').innerText = exchangeRateText;
-    
+
     startDailyCountdown(data.lastCheckin);
     startHourlyCountdown(data.lastHourlyClaim);
 }
@@ -218,6 +238,22 @@ function startHourlyCountdown(lastClaim) {
     }, 1000);
 }
 
+// ================= ADSGRAM FUNCTION =================
+function showInterstitialAd() {
+    if (!AdController) {
+        console.log("AdController not initialized. Skipping ad.");
+        return;
+    }
+    console.log("Attempting to show Interstitial Ad...");
+    // The show() promise resolves if the ad is closed or watched to the end.
+    // It rejects if an error occurs.
+    AdController.show().then(result => {
+        console.log("AdsGram ad shown or closed:", result);
+    }).catch(error => {
+        console.error("AdsGram ad error:", error);
+    });
+}
+
 // ================= EVENT BINDING =================
 function bindAllEvents() {
     document.getElementById('language-switcher')?.addEventListener('click', handleLanguageSwitch);
@@ -262,6 +298,7 @@ async function handleClaimDailyReward() {
         });
         document.getElementById('daily-reward-modal').classList.remove('show');
         showAlert(i18n('congrats_points', {points: 500}), "success");
+        showInterstitialAd(); // Show ad after claiming daily reward
     } catch (error) {
         showAlert(i18n('error_occurred'), "error");
         btn.disabled = false;
@@ -278,6 +315,7 @@ async function handleClaimHourlyReward() {
             lastHourlyClaim: firebase.firestore.FieldValue.serverTimestamp()
         });
         showAlert(i18n('congrats_points', {points: 100}), "success");
+        showInterstitialAd(); // Show ad after claiming hourly reward
     } catch (error) {
         showAlert(i18n('error_occurred'), "error");
         btn.disabled = false;
@@ -292,7 +330,7 @@ async function handleRedeemGiftCode() {
     const btn = document.getElementById("redeem-gift-code-btn");
     btn.disabled = true; btn.innerText = i18n('loading');
     try {
-        const redeemFunction = functions.httpsCallable('redeemGiftCode' );
+        const redeemFunction = functions.httpsCallable('redeemGiftCode'  );
         const result = await redeemFunction({ code: code });
         if (result.data.success) {
             showAlert(`${i18n('congrats_points')} ${result.data.reward} ${i18n('points')}`, "success");
@@ -324,6 +362,7 @@ async function handleConvertPoints() {
             usdt: firebase.firestore.FieldValue.increment(usdtToAdd)
         });
         showAlert(`${pointsToConvert} ${i18n('points')} ${i18n('conversion_success')} ${usdtToAdd.toFixed(4)} USDT.`, "success");
+        showInterstitialAd(); // Show ad after converting points
         input.value = "";
     } catch (error) {
         showAlert(i18n('error_occurred'), "error");
@@ -338,7 +377,7 @@ async function handleWithdraw() {
     if (isNaN(amount) || amount < 10) return showAlert(`${i18n('min_10_usdt')} USDT.`, "error");
     if (wallet.length < 10) return showAlert(i18n('enter_wallet_address'), "error");
     if (!currentUserData || currentUserData.usdt < amount) return showAlert(i18n('usdt_balance'), "error");
-    
+
     const btn = document.getElementById('withdraw-btn');
     btn.disabled = true; btn.innerText = i18n('loading');
     try {
@@ -360,8 +399,8 @@ async function handleWithdraw() {
 function handleInvite() {
     const botUsername = "Qqk_bot"; // استبدل باسم بوتك
     const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
-    const shareText = `💰 ${i18n('invite_and_earn' )} 💰\n\n${inviteLink}`;
-    tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink )}&text=${encodeURIComponent(shareText)}`);
+    const shareText = `💰 ${i18n('invite_and_earn'  )} 💰\n\n${inviteLink}`;
+    tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(inviteLink  )}&text=${encodeURIComponent(shareText)}`);
 }
 
 // ================= TASKS FUNCTIONS =================
